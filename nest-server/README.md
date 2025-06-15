@@ -60,9 +60,3 @@ src/
 ├── app.controller.ts # 控制器
 └── app.service.ts   # 服务
 ```
-
-## 开发说明
-
-- 数据库连接使用TypeORM
-- 支持热重载（开发模式）
-- 自动同步数据库结构（开发环境） 
