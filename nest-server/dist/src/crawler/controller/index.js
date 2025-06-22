@@ -11,16 +11,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var CrawlerController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CrawlerController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const service_1 = require("../service");
-let CrawlerController = class CrawlerController {
+let CrawlerController = CrawlerController_1 = class CrawlerController {
     constructor(crawlerService) {
         this.crawlerService = crawlerService;
+        this.logger = new common_1.Logger(CrawlerController_1.name);
     }
     async crawlMovies(page = 1) {
+        this.logger.log(`Crawling movies page ${page}`);
         await this.crawlerService.crawlMovieList(page);
         return { message: `Successfully crawled page ${page}` };
     }
@@ -35,7 +38,7 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], CrawlerController.prototype, "crawlMovies", null);
-exports.CrawlerController = CrawlerController = __decorate([
+exports.CrawlerController = CrawlerController = CrawlerController_1 = __decorate([
     (0, swagger_1.ApiTags)('爬虫'),
     (0, common_1.Controller)('crawler'),
     __metadata("design:paramtypes", [service_1.CrawlerService])

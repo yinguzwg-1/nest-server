@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 export declare class AITranslationService {
     private configService;
+    private readonly logger;
     private readonly appKey;
     private readonly appSecret;
     private readonly youdaoApiUrl;

@@ -6,22 +6,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TranslationModule = void 0;
+exports.CrawlerModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const entities_1 = require("../entities");
 const service_1 = require("../service");
-const ai_translation_service_1 = require("../service/ai-translation.service");
-let TranslationModule = class TranslationModule {
+const controller_1 = require("../controller");
+const entities_1 = require("../../media/entities");
+const module_1 = require("../../translation/module");
+let CrawlerModule = class CrawlerModule {
 };
-exports.TranslationModule = TranslationModule;
-exports.TranslationModule = TranslationModule = __decorate([
+exports.CrawlerModule = CrawlerModule;
+exports.CrawlerModule = CrawlerModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([entities_1.Translation])
+            typeorm_1.TypeOrmModule.forFeature([entities_1.Media]),
+            module_1.TranslationModule,
         ],
-        providers: [service_1.TranslationService, ai_translation_service_1.AITranslationService],
-        exports: [service_1.TranslationService, ai_translation_service_1.AITranslationService],
+        controllers: [controller_1.CrawlerController],
+        providers: [service_1.CrawlerService],
+        exports: [service_1.CrawlerService],
     })
-], TranslationModule);
+], CrawlerModule);
 //# sourceMappingURL=index.js.map

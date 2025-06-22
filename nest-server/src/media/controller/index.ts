@@ -29,31 +29,10 @@ export class MediaController {
     return this.mediaService.findAll(query);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: '获取单个媒体' })
-  @ApiResponse({ status: 200, description: '获取成功' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.mediaService.findOne(id);
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: '更新媒体' })
-  @ApiResponse({ status: 200, description: '更新成功' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateMediaDto: UpdateMediaDto) {
-    return this.mediaService.update(id, updateMediaDto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: '删除媒体' })
-  @ApiResponse({ status: 200, description: '删除成功' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.mediaService.remove(id);
-  }
-
-  @Get('search/:query')
+  @Get('search')
   @ApiOperation({ summary: '搜索媒体' })
   search(
-    @Param('query') query: string,
+    @Query('query') query: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize?: number,
   ) {

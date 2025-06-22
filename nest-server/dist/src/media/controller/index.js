@@ -17,7 +17,6 @@ exports.MediaController = void 0;
 const common_1 = require("@nestjs/common");
 const service_1 = require("../service");
 const create_media_dto_1 = require("../dto/create-media.dto");
-const update_media_dto_1 = require("../dto/update-media.dto");
 const query_media_dto_1 = require("../dto/query-media.dto");
 const swagger_1 = require("@nestjs/swagger");
 const language_interceptor_1 = require("../../common/interceptors/language.interceptor");
@@ -32,15 +31,6 @@ let MediaController = MediaController_1 = class MediaController {
     findAll(query) {
         console.log('QueryMediaDto----', query);
         return this.mediaService.findAll(query);
-    }
-    findOne(id) {
-        return this.mediaService.findOne(id);
-    }
-    update(id, updateMediaDto) {
-        return this.mediaService.update(id, updateMediaDto);
-    }
-    remove(id) {
-        return this.mediaService.remove(id);
     }
     search(query, page, pageSize) {
         this.logger.log(`Search media with query: ${query}`);
@@ -67,37 +57,9 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], MediaController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: '获取单个媒体' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: '获取成功' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
-], MediaController.prototype, "findOne", null);
-__decorate([
-    (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: '更新媒体' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: '更新成功' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_media_dto_1.UpdateMediaDto]),
-    __metadata("design:returntype", void 0)
-], MediaController.prototype, "update", null);
-__decorate([
-    (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: '删除媒体' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: '删除成功' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
-], MediaController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Get)('search/:query'),
+    (0, common_1.Get)('search'),
     (0, swagger_1.ApiOperation)({ summary: '搜索媒体' }),
-    __param(0, (0, common_1.Param)('query')),
+    __param(0, (0, common_1.Query)('query')),
     __param(1, (0, common_1.Query)('page', new common_1.ParseIntPipe({ optional: true }))),
     __param(2, (0, common_1.Query)('pageSize', new common_1.ParseIntPipe({ optional: true }))),
     __metadata("design:type", Function),

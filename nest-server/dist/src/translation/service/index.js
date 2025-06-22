@@ -11,15 +11,18 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var TranslationService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TranslationService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const entities_1 = require("../entities");
-let TranslationService = class TranslationService {
-    constructor(translationRepository) {
+let TranslationService = TranslationService_1 = class TranslationService {
+    constructor(translationRepository, dataSource) {
         this.translationRepository = translationRepository;
+        this.dataSource = dataSource;
+        this.logger = new common_1.Logger(TranslationService_1.name);
     }
     async getTranslation(mediaId, field, language) {
         const translation = await this.translationRepository.findOne({
@@ -55,23 +58,66 @@ let TranslationService = class TranslationService {
         }, {});
     }
     async setTranslations(mediaId, field, translations) {
-        await this.translationRepository.delete({ mediaId, field });
-        const translationEntities = Object.entries(translations).map(([language, value]) => ({
-            mediaId,
-            field,
-            language,
-            value,
-        }));
-        await this.translationRepository.save(translationEntities);
+        try {
+            await this.translationRepository.delete({ mediaId, field });
+            const translationEntities = Object.entries(translations).map(([language, value]) => ({
+                mediaId,
+                field,
+                language,
+                value,
+            }));
+            await this.translationRepository.save(translationEntities);
+            this.logger.log(`Successfully set translations for media ${mediaId}, field ${field}`);
+        }
+        catch (error) {
+            this.logger.error(`Failed to set translations for media ${mediaId}, field ${field}: ${error.message}`);
+            throw error;
+        }
+    }
+    async createTranslationsForNewMedia(media, translations) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            if (translations.title) {
+                const titleTranslations = Object.entries(translations.title).map(([language, value]) => this.translationRepository.create({
+                    mediaId: media.id,
+                    field: entities_1.TranslationField.TITLE,
+                    language,
+                    value,
+                }));
+                await queryRunner.manager.save(entities_1.Translation, titleTranslations);
+            }
+            if (translations.description) {
+                const descriptionTranslations = Object.entries(translations.description).map(([language, value]) => this.translationRepository.create({
+                    mediaId: media.id,
+                    field: entities_1.TranslationField.DESCRIPTION,
+                    language,
+                    value,
+                }));
+                await queryRunner.manager.save(entities_1.Translation, descriptionTranslations);
+            }
+            await queryRunner.commitTransaction();
+            this.logger.log(`Successfully created translations for new media ${media.id}`);
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            this.logger.error(`Failed to create translations for new media ${media.id}: ${error.message}`);
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
     }
     async deleteTranslations(mediaId) {
         await this.translationRepository.delete({ mediaId });
     }
 };
 exports.TranslationService = TranslationService;
-exports.TranslationService = TranslationService = __decorate([
+exports.TranslationService = TranslationService = TranslationService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(entities_1.Translation)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], TranslationService);
 //# sourceMappingURL=index.js.map

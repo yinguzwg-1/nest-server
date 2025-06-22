@@ -25,7 +25,7 @@ export class Media {
   @Column('decimal', { precision: 3, scale: 1 })
   rating: number;
 
-  @Column('simple-array')
+  @Column('json')
   genres: string[];
 
   @Column({

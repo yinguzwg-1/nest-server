@@ -17,6 +17,7 @@ const entities_2 = require("./translation/entities");
 const module_1 = require("./media/module");
 const module_2 = require("./translation/module");
 const cache_module_1 = require("./cache/cache.module");
+const module_3 = require("./crawler/module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -43,6 +44,7 @@ exports.AppModule = AppModule = __decorate([
             module_1.MediaModule,
             module_2.TranslationModule,
             cache_module_1.CacheModule,
+            module_3.CrawlerModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

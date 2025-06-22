@@ -45,7 +45,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Media.prototype, "rating", void 0);
 __decorate([
-    (0, typeorm_1.Column)('simple-array'),
+    (0, typeorm_1.Column)('json'),
     __metadata("design:type", Array)
 ], Media.prototype, "genres", void 0);
 __decorate([

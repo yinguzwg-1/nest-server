@@ -8,6 +8,7 @@ import { Translation } from './translation/entities';
 import { MediaModule } from './media/module';
 import { TranslationModule } from './translation/module';
 import { CacheModule } from './cache/cache.module';
+import { CrawlerModule } from './crawler/module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CacheModule } from './cache/cache.module';
     MediaModule,
     TranslationModule,
     CacheModule,
+    CrawlerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
