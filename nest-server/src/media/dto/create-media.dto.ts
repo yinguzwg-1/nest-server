@@ -1,6 +1,27 @@
-import { IsString, IsNumber, IsUrl, IsArray, IsEnum, IsOptional, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsUrl, IsArray, IsEnum, IsOptional, Min, Max, IsBoolean, ValidateNested, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MediaType } from '../types/media.types';
+import { Type } from 'class-transformer';
+import { MediaType, MediaStatus } from '../types';
+
+export class MultiLanguageStringDto {
+  @IsString()
+  @IsNotEmpty()
+  zh: string;
+
+  @IsString()
+  @IsNotEmpty()
+  en: string;
+}
+
+export class TranslationsDto {
+  @IsOptional()
+  @IsObject()
+  title?: Record<string, string>;
+
+  @IsOptional()
+  @IsObject()
+  description?: Record<string, string>;
+}
 
 export class CreateMediaDto {
   @ApiProperty({ description: '标题' })
@@ -12,11 +33,11 @@ export class CreateMediaDto {
   description: string;
 
   @ApiProperty({ description: '海报URL' })
-  @IsUrl()
+  @IsString()
   poster: string;
 
   @ApiProperty({ description: '背景图URL' })
-  @IsUrl()
+  @IsString()
   backdrop: string;
 
   @ApiProperty({ description: '年份' })
@@ -33,9 +54,9 @@ export class CreateMediaDto {
   @IsEnum(MediaType)
   type: MediaType;
 
-  @ApiProperty({ description: '状态', enum: ['released', 'upcoming', 'ongoing'] })
-  @IsString()
-  status: string;
+  @ApiProperty({ description: '状态', enum: MediaStatus })
+  @IsEnum(MediaStatus)
+  status: MediaStatus;
 
   @ApiProperty({ description: '类型', isArray: true })
   @IsArray()
@@ -83,4 +104,29 @@ export class CreateMediaDto {
   @IsArray()
   @IsString({ each: true })
   cast: string[];
+
+  @ApiProperty({ description: '来源URL', required: false })
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string;
+
+  @ApiProperty({ description: '图片下载状态', required: false })
+  @IsOptional()
+  @IsBoolean()
+  isImagesDownloaded?: boolean;
+
+  @ApiProperty({ description: '观看次数', required: false })
+  @IsOptional()
+  @IsNumber()
+  views?: number;
+
+  @ApiProperty({ description: '喜欢次数', required: false })
+  @IsOptional()
+  @IsNumber()
+  likes?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TranslationsDto)
+  translations?: TranslationsDto;
 } 

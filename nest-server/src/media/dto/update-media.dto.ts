@@ -1,4 +1,80 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateMediaDto } from './create-media.dto';
+import { CreateMediaDto, TranslationsDto } from './create-media.dto';
+import { IsOptional, IsString, IsNumber, IsEnum, IsArray, IsBoolean, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { MediaType, MediaStatus } from '../types';
 
-export class UpdateMediaDto extends PartialType(CreateMediaDto) {} 
+export class UpdateMediaDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  poster?: string;
+
+  @IsOptional()
+  @IsString()
+  backdrop?: string;
+
+  @IsOptional()
+  @IsNumber()
+  year?: number;
+
+  @IsOptional()
+  @IsNumber()
+  rating?: number;
+
+  @IsOptional()
+  @IsArray()
+  genres?: string[];
+
+  @IsOptional()
+  @IsEnum(MediaStatus)
+  status?: MediaStatus;
+
+  @IsOptional()
+  @IsEnum(MediaType)
+  type?: MediaType;
+
+  @IsOptional()
+  @IsArray()
+  cast?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  duration?: number;
+
+  @IsOptional()
+  @IsString()
+  director?: string;
+
+  @IsOptional()
+  @IsNumber()
+  boxOffice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  views?: number;
+
+  @IsOptional()
+  @IsNumber()
+  likes?: number;
+
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isImagesDownloaded?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TranslationsDto)
+  translations?: TranslationsDto;
+} 

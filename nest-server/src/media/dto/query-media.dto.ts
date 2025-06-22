@@ -1,22 +1,49 @@
 import { IsEnum, IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MediaType, MediaStatus } from '../types/media.types';
+import { MediaType, MediaStatus } from '../types';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryMediaDto {
-  @IsEnum(MediaType)
+  @ApiPropertyOptional({ description: '页码' })
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  page?: number;
+
+  @ApiPropertyOptional({ description: '每页数量' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  limit?: number;
+
+  @ApiPropertyOptional({ description: '媒体类型', enum: MediaType })
+  @IsOptional()
+  @IsEnum(MediaType)
   type?: MediaType;
+
+  @ApiPropertyOptional({ description: '状态', enum: MediaStatus })
+  @IsOptional()
+  @IsEnum(MediaStatus)
+  status?: MediaStatus;
+
+  @ApiPropertyOptional({ description: '年份' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  year?: number;
+
+  @ApiPropertyOptional({ description: '标题' })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  language?: string;
 
   @IsString()
   @IsOptional()
   genre?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1900)
-  @Max(2100)
-  @Type(() => Number)
-  year?: number;
 
   @IsNumber()
   @IsOptional()
@@ -25,10 +52,6 @@ export class QueryMediaDto {
   @Type(() => Number)
   rating?: number;
 
-  @IsEnum(MediaStatus)
-  @IsOptional()
-  status?: MediaStatus;
-
   @IsString()
   @IsOptional()
   sortBy?: string;
@@ -36,19 +59,6 @@ export class QueryMediaDto {
   @IsString()
   @IsOptional()
   sortOrder?: 'ASC' | 'DESC';
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Type(() => Number)
-  page?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Max(100)
-  @Type(() => Number)
-  limit?: number;
 
   @IsString()
   @IsOptional()

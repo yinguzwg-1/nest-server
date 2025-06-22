@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Media } from '../entities/media.entity';
+import { Media } from '../entities';
+import { MediaWithTranslations } from '../service';
 
 export class MediaResponseDto {
   @ApiProperty()
@@ -63,16 +64,12 @@ export class MediaResponseDto {
   updatedAt: Date;
 }
 
-export class MediaListResponseDto {
-  @ApiProperty({ type: [MediaResponseDto] })
-  data: Media[];
-
-  @ApiProperty()
-  total: number;
-
-  @ApiProperty()
-  page: number;
-
-  @ApiProperty()
-  pageSize: number;
+export interface MediaListResponseDto {
+  items: MediaWithTranslations[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 } 

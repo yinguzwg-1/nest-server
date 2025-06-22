@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Media } from './entities/media.entity';
+import { Media } from './media/entities';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',

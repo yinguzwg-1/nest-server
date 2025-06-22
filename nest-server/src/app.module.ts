@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { User } from './entities/user.entity';
-import { Media } from './media/entities/media.entity';
-import { MediaModule } from './media/media.module';
+import { Media } from './media/entities';
+import { Translation } from './translation/entities';
+import { MediaModule } from './media/module';
+import { TranslationModule } from './translation/module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -16,20 +18,19 @@ import { MediaModule } from './media/media.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 3306),
-        username: configService.get('DB_USERNAME', 'root'),
-        password: configService.get('DB_PASSWORD', 'qq123456'),
-        database: configService.get('DB_DATABASE', 'nest_db'),
-        entities: [User, Media],
+        host: configService.get('DB_HOST'),
+        port: configService.get('DB_PORT'),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+        entities: [Media, Translation],
         synchronize: false,
-        migrations: ['src/migrations/*.ts'],
-        migrationsRun: true,
-        logging: true,
       }),
       inject: [ConfigService],
     }),
     MediaModule,
+    TranslationModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],

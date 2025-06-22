@@ -1,16 +1,23 @@
-import { DataSource } from 'typeorm';
-import { Media } from './src/entities/media.entity';
+const { DataSource } = require('typeorm');
+const { ConfigService } = require('@nestjs/config');
+const { config } = require('dotenv');
+const { Media } = require('./src/media/entities');
+const { Translation } = require('./src/translation/entities');
 
-export default new DataSource({
+config();
+
+const configService = new ConfigService();
+
+module.exports = new DataSource({
     type: 'mysql',
-    host: 'localhost',
-    port: 3306,
-    username: 'root',
-    password: 'qq123456',
-    database: 'nest_db',
+    host: configService.get('DB_HOST'),
+    port: configService.get('DB_PORT'),
+    username: configService.get('DB_USERNAME'),
+    password: configService.get('DB_PASSWORD'),
+    database: configService.get('DB_DATABASE'),
     synchronize: false,
     logging: true,
-    entities: [Media],
+    entities: [Media, Translation],
     migrations: ['src/migrations/*.ts'],
     subscribers: [],
 }); 
