@@ -29,6 +29,7 @@ export class AITranslationService {
   }
 
   private generateSign(q: string, salt: string, curtime: string): string {
+
     const str = this.appKey + this.truncate(q) + salt + curtime + this.appSecret;
     return CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
   }
@@ -56,7 +57,7 @@ export class AITranslationService {
         signType: 'v3',
         curtime,
       });
-
+      console.log(text, from, to, this.appKey, salt, sign, curtime);
       if (response.data.errorCode === '0') {
         const translatedText = response.data.translation[0];
         this.logger.debug(`翻译成功，结果: ${translatedText}`);

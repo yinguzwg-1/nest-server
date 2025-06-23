@@ -60,6 +60,7 @@ let AITranslationService = AITranslationService_1 = class AITranslationService {
                 signType: 'v3',
                 curtime,
             });
+            console.log(text, from, to, this.appKey, salt, sign, curtime);
             if (response.data.errorCode === '0') {
                 const translatedText = response.data.translation[0];
                 this.logger.debug(`翻译成功，结果: ${translatedText}`);
