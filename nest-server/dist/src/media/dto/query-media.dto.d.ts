@@ -10,6 +10,6 @@ export declare class QueryMediaDto {
     genre?: string;
     rating?: number;
     sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
+    orderBy?: 'ASC' | 'DESC';
     search?: string;
 }

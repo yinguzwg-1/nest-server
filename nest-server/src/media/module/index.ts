@@ -9,6 +9,7 @@ import { TranslationModule } from '../../translation/module';
   imports: [
     TypeOrmModule.forFeature([Media]),
     TranslationModule,
+    
   ],
   controllers: [MediaController],
   providers: [MediaService],

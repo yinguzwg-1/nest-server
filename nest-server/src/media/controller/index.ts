@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ParseIntPipe, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseInterceptors } from '@nestjs/common';
 import { MediaService } from '../service';
 import { CreateMediaDto } from '../dto/create-media.dto';
-import { UpdateMediaDto } from '../dto/update-media.dto';
 import { QueryMediaDto } from '../dto/query-media.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LanguageInterceptor } from '../../common/interceptors/language.interceptor';
@@ -10,7 +9,6 @@ import { LanguageInterceptor } from '../../common/interceptors/language.intercep
 @Controller('media')
 @UseInterceptors(LanguageInterceptor)
 export class MediaController {
-  private readonly logger = new Logger(MediaController.name);
   
   constructor(private readonly mediaService: MediaService) {}
 
@@ -25,18 +23,7 @@ export class MediaController {
   @ApiOperation({ summary: '获取媒体列表' })
   @ApiResponse({ status: 200, description: '获取成功' })
   findAll(@Query() query: QueryMediaDto) {
-    console.log('QueryMediaDto----', query);
-    return this.mediaService.findAll(query);
+    return this.mediaService.findAllWithTranslationsRaw(query);
   }
 
-  @Get('search')
-  @ApiOperation({ summary: '搜索媒体' })
-  search(
-    @Query('query') query: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize?: number,
-  ) {
-    this.logger.log(`Search media with query: ${query}`);
-    return this.mediaService.search(query, page, pageSize);
-  }
 } 

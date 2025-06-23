@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Media } from '../entities';
-import { MediaWithTranslations } from '../service';
 
 export class MediaResponseDto {
   @ApiProperty()
@@ -65,11 +64,47 @@ export class MediaResponseDto {
 }
 
 export interface MediaListResponseDto {
+  items: Media[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface MediaWithTranslationsResponseDto {
   items: MediaWithTranslations[];
   meta: {
     total: number;
     page: number;
     limit: number;
     totalPages: number;
+  };
+}
+
+export interface MediaWithTranslations {
+  id: number;
+  title: string;
+  description: string;
+  poster: string;
+  backdrop: string;
+  year: number;
+  rating: number;
+  status: string;
+  type: string;
+  cast: string[];
+  duration?: number;
+  director?: string;
+  boxOffice?: number;
+  views: number;
+  likes: number;
+  sourceUrl?: string;
+  isImagesDownloaded: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  translations?: {
+    title?: Record<string, string>;
+    description?: Record<string, string>;
   };
 } 

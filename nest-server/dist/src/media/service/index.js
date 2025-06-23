@@ -11,22 +11,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var MediaService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MediaService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const entities_1 = require("../entities");
-const typeorm_3 = require("typeorm");
-const common_2 = require("@nestjs/common");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const service_1 = require("../../translation/service");
 const entities_2 = require("../../translation/entities");
-let MediaService = class MediaService {
+let MediaService = MediaService_1 = class MediaService {
     constructor(mediaRepository, cacheManager, translationService) {
         this.mediaRepository = mediaRepository;
         this.cacheManager = cacheManager;
         this.translationService = translationService;
+        this.logger = new common_1.Logger(MediaService_1.name);
     }
     getCacheKey(key) {
         return `media:${key}`;
@@ -39,7 +39,6 @@ let MediaService = class MediaService {
         media.backdrop = createMediaDto.backdrop;
         media.year = createMediaDto.year;
         media.rating = createMediaDto.rating;
-        media.genres = createMediaDto.genres;
         media.status = createMediaDto.status;
         media.type = createMediaDto.type;
         media.cast = createMediaDto.cast;
@@ -77,8 +76,6 @@ let MediaService = class MediaService {
             mediaEntity.year = updateMediaDto.year;
         if (updateMediaDto.rating)
             mediaEntity.rating = updateMediaDto.rating;
-        if (updateMediaDto.genres)
-            mediaEntity.genres = updateMediaDto.genres;
         if (updateMediaDto.status)
             mediaEntity.status = updateMediaDto.status;
         if (updateMediaDto.type)
@@ -134,7 +131,7 @@ let MediaService = class MediaService {
         if (year)
             where.year = year;
         if (title)
-            where.title = (0, typeorm_3.Like)(`%${title}%`);
+            where.title = (0, typeorm_2.Like)(`%${title}%`);
         const [items, total] = await this.mediaRepository.findAndCount({
             where,
             order: {
@@ -143,15 +140,8 @@ let MediaService = class MediaService {
             skip: (page - 1) * limit,
             take: limit,
         });
-        const itemsWithTranslations = await Promise.all(items.map(async (item) => {
-            const translations = {
-                title: await this.translationService.getTranslations(item.id, entities_2.TranslationField.TITLE),
-                description: await this.translationService.getTranslations(item.id, entities_2.TranslationField.DESCRIPTION)
-            };
-            return { ...item, translations };
-        }));
         const result = {
-            items: itemsWithTranslations,
+            items,
             meta: {
                 total,
                 page: Number(page),
@@ -188,7 +178,7 @@ let MediaService = class MediaService {
         }
         const [items, total] = await this.mediaRepository.findAndCount({
             where: [
-                { title: (0, typeorm_3.Like)(`%${query}%`) },
+                { title: (0, typeorm_2.Like)(`%${query}%`) },
             ],
             order: {
                 id: 'DESC'
@@ -196,15 +186,8 @@ let MediaService = class MediaService {
             skip: (page - 1) * pageSize,
             take: pageSize,
         });
-        const itemsWithTranslations = await Promise.all(items.map(async (item) => {
-            const translations = {
-                title: await this.translationService.getTranslations(item.id, entities_2.TranslationField.TITLE),
-                description: await this.translationService.getTranslations(item.id, entities_2.TranslationField.DESCRIPTION)
-            };
-            return { ...item, translations };
-        }));
         const result = {
-            items: itemsWithTranslations,
+            items,
             meta: {
                 total,
                 page,
@@ -215,12 +198,171 @@ let MediaService = class MediaService {
         await this.cacheManager.set(cacheKey, result);
         return result;
     }
+    async findOneWithTranslationsRaw(id) {
+        const cacheKey = this.getCacheKey(`${id}:with-translations-raw`);
+        const cached = await this.cacheManager.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+        const result = await this.mediaRepository.query(`
+      SELECT 
+          m.title,
+          MAX(CASE WHEN t.language = 'en' THEN t.value END) AS title_en,
+          
+      FROM 
+          media m
+      LEFT JOIN 
+          translations t ON m.id = t.mediaId
+      GROUP BY 
+          m.id;
+    `, [id]);
+        if (!result || result.length === 0) {
+            throw new common_1.NotFoundException(`Media with ID ${id} not found`);
+        }
+        const media = {
+            id: result[0].id,
+            title: result[0].title,
+            title_en: result[0].title_en,
+            description: result[0].description,
+            poster: result[0].poster,
+            backdrop: result[0].backdrop,
+            year: result[0].year,
+            rating: result[0].rating,
+            status: result[0].status,
+            type: result[0].type,
+            cast: result[0].cast.split(','),
+            duration: result[0].duration,
+            director: result[0].director,
+            boxOffice: result[0].boxOffice,
+            views: result[0].views,
+            likes: result[0].likes,
+            sourceUrl: result[0].sourceUrl,
+            isImagesDownloaded: result[0].isImagesDownloaded,
+            createdAt: result[0].createdAt,
+            updatedAt: result[0].updatedAt,
+        };
+        const translations = {
+            title: {},
+            description: {}
+        };
+        result.forEach(row => {
+            if (row.field && row.language && row.value) {
+                if (row.field === entities_2.TranslationField.TITLE) {
+                    translations.title[row.language] = row.value;
+                }
+                else if (row.field === entities_2.TranslationField.DESCRIPTION) {
+                    translations.description[row.language] = row.value;
+                }
+            }
+        });
+        const mediaWithTranslations = { ...media, translations };
+        await this.cacheManager.set(cacheKey, mediaWithTranslations);
+        return mediaWithTranslations;
+    }
+    async findAllWithTranslationsRaw(query) {
+        const cacheKey = this.getCacheKey(`list-with-translations-raw:${JSON.stringify(query)}`);
+        const cached = await this.cacheManager.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+        const { page = 1, limit = 10, type, status, year, search, sortBy, orderBy } = query;
+        let whereConditions = 'WHERE 1=1';
+        const params = [];
+        if (type) {
+            whereConditions += ' AND m.type = ?';
+            params.push(type);
+        }
+        if (status) {
+            whereConditions += ' AND m.status = ?';
+            params.push(status);
+        }
+        if (year) {
+            whereConditions += ' AND m.year = ?';
+            params.push(year);
+        }
+        if (search) {
+            whereConditions += ' AND (m.title LIKE ?)';
+            params.push(`%${search}%`);
+        }
+        this.logger.log('sortBy', sortBy);
+        this.logger.log('orderBy', orderBy);
+        const offset = (page - 1) * limit;
+        const result = await this.mediaRepository.query(`
+      SELECT 
+          m.*,
+          MAX(CASE WHEN t.language = 'en' THEN t.value END) AS title_en    
+      FROM 
+          media m   
+      LEFT JOIN
+          translations t ON m.id = t.mediaId 
+      ${whereConditions}
+      GROUP BY 
+          m.id
+      ${sortBy ? `ORDER BY m.${sortBy} ${orderBy ? orderBy : 'DESC'}` : 'ORDER BY m.id DESC'}
+      LIMIT ? OFFSET ?;
+    `, [...params, limit, offset]);
+        const countResult = await this.mediaRepository.query(`
+        SELECT COUNT(DISTINCT m.id) as total
+        FROM media m
+        ${whereConditions}
+       
+      `, params);
+        const total = countResult[0].total;
+        const mediaMap = new Map();
+        result.forEach(row => {
+            if (!mediaMap.has(row.id)) {
+                mediaMap.set(row.id, {
+                    id: row.id,
+                    title: row.title,
+                    description: row.description,
+                    poster: row.poster,
+                    backdrop: row.backdrop,
+                    year: row.year,
+                    rating: row.rating,
+                    status: row.status,
+                    type: row.type,
+                    cast: row.cast,
+                    duration: row.duration,
+                    director: row.director,
+                    boxOffice: row.boxOffice,
+                    views: row.views,
+                    likes: row.likes,
+                    sourceUrl: row.sourceUrl,
+                    isImagesDownloaded: row.isImagesDownloaded,
+                    createdAt: row.createdAt,
+                    updatedAt: row.updatedAt,
+                    title_en: row.title_en,
+                });
+            }
+            if (row.field && row.language && row.value) {
+                const media = mediaMap.get(row.id);
+                if (row.field === entities_2.TranslationField.TITLE) {
+                    media.translations.title[row.language] = row.value;
+                }
+                else if (row.field === entities_2.TranslationField.DESCRIPTION) {
+                    media.translations.description[row.language] = row.value;
+                }
+            }
+        });
+        const items = Array.from(mediaMap.values());
+        const result_data = {
+            items,
+            meta: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+        await this.cacheManager.set(cacheKey, result_data);
+        return result_data;
+    }
 };
 exports.MediaService = MediaService;
-exports.MediaService = MediaService = __decorate([
+exports.MediaService = MediaService = MediaService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(entities_1.Media)),
-    __param(1, (0, common_2.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __param(1, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository, Object, service_1.TranslationService])
 ], MediaService);
 //# sourceMappingURL=index.js.map

@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var MediaController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MediaController = void 0;
 const common_1 = require("@nestjs/common");
@@ -20,21 +19,15 @@ const create_media_dto_1 = require("../dto/create-media.dto");
 const query_media_dto_1 = require("../dto/query-media.dto");
 const swagger_1 = require("@nestjs/swagger");
 const language_interceptor_1 = require("../../common/interceptors/language.interceptor");
-let MediaController = MediaController_1 = class MediaController {
+let MediaController = class MediaController {
     constructor(mediaService) {
         this.mediaService = mediaService;
-        this.logger = new common_1.Logger(MediaController_1.name);
     }
     create(createMediaDto) {
         return this.mediaService.create(createMediaDto);
     }
     findAll(query) {
-        console.log('QueryMediaDto----', query);
-        return this.mediaService.findAll(query);
-    }
-    search(query, page, pageSize) {
-        this.logger.log(`Search media with query: ${query}`);
-        return this.mediaService.search(query, page, pageSize);
+        return this.mediaService.findAllWithTranslationsRaw(query);
     }
 };
 exports.MediaController = MediaController;
@@ -56,17 +49,7 @@ __decorate([
     __metadata("design:paramtypes", [query_media_dto_1.QueryMediaDto]),
     __metadata("design:returntype", void 0)
 ], MediaController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)('search'),
-    (0, swagger_1.ApiOperation)({ summary: '搜索媒体' }),
-    __param(0, (0, common_1.Query)('query')),
-    __param(1, (0, common_1.Query)('page', new common_1.ParseIntPipe({ optional: true }))),
-    __param(2, (0, common_1.Query)('pageSize', new common_1.ParseIntPipe({ optional: true }))),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
-    __metadata("design:returntype", void 0)
-], MediaController.prototype, "search", null);
-exports.MediaController = MediaController = MediaController_1 = __decorate([
+exports.MediaController = MediaController = __decorate([
     (0, swagger_1.ApiTags)('media'),
     (0, common_1.Controller)('media'),
     (0, common_1.UseInterceptors)(language_interceptor_1.LanguageInterceptor),

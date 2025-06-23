@@ -186,19 +186,12 @@ let CrawlerService = CrawlerService_1 = class CrawlerService {
                     };
                     const movie = this.mediaRepository.create(movieEntity);
                     const savedMovie = await this.mediaRepository.save(movie);
-                    const [englishTitle, englishDescription] = await Promise.all([
-                        this.aiTranslationService.translateToEnglish(movieData.title),
-                        this.aiTranslationService.translateToEnglish('暂无描述')
-                    ]);
+                    const englishTitle = await this.aiTranslationService.translateToEnglish(movieData.title);
                     this.logger.log(`Translated title: ${movieData.title} -> ${englishTitle}`);
                     await this.translationService.createTranslationsForNewMedia(savedMovie, {
                         title: {
                             zh: movieData.title,
                             en: englishTitle
-                        },
-                        description: {
-                            zh: '暂无描述',
-                            en: englishDescription
                         }
                     });
                     this.logger.log(`Successfully saved movie "${movieData.title}" with translations`);

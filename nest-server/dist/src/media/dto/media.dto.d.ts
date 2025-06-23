@@ -1,4 +1,4 @@
-import { MediaWithTranslations } from '../service';
+import { Media } from '../entities';
 export declare class MediaResponseDto {
     id: string;
     title: string;
@@ -22,11 +22,45 @@ export declare class MediaResponseDto {
     updatedAt: Date;
 }
 export interface MediaListResponseDto {
+    items: Media[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+export interface MediaWithTranslationsResponseDto {
     items: MediaWithTranslations[];
     meta: {
         total: number;
         page: number;
         limit: number;
         totalPages: number;
+    };
+}
+export interface MediaWithTranslations {
+    id: number;
+    title: string;
+    description: string;
+    poster: string;
+    backdrop: string;
+    year: number;
+    rating: number;
+    status: string;
+    type: string;
+    cast: string[];
+    duration?: number;
+    director?: string;
+    boxOffice?: number;
+    views: number;
+    likes: number;
+    sourceUrl?: string;
+    isImagesDownloaded: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    translations?: {
+        title?: Record<string, string>;
+        description?: Record<string, string>;
     };
 }

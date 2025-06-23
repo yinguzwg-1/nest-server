@@ -14,13 +14,13 @@ exports.AITranslationService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const axios_1 = require("axios");
-const CryptoJS = require("crypto-js");
 const common_2 = require("@nestjs/common");
+const md5_1 = require("./md5");
 let AITranslationService = AITranslationService_1 = class AITranslationService {
     constructor(configService) {
         this.configService = configService;
         this.logger = new common_2.Logger(AITranslationService_1.name);
-        this.youdaoApiUrl = 'https://openapi.youdao.com/api';
+        this.youdaoApiUrl = 'http://api.fanyi.baidu.com/api/trans/vip/translate';
         this.appKey = this.configService.get('YOUDAO_APP_KEY');
         this.appSecret = this.configService.get('YOUDAO_APP_SECRET');
         if (!this.appKey || !this.appSecret) {
@@ -36,9 +36,9 @@ let AITranslationService = AITranslationService_1 = class AITranslationService {
             return q;
         return q.substring(0, 10) + len + q.substring(len - 10, len);
     }
-    generateSign(q, salt, curtime) {
-        const str = this.appKey + this.truncate(q) + salt + curtime + this.appSecret;
-        return CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
+    generateSign(q, salt) {
+        const str = this.appKey + this.truncate(q) + salt + this.appSecret;
+        return (0, md5_1.MD5)(str);
     }
     async translateText(text, from, to) {
         if (!text.trim()) {
@@ -47,57 +47,28 @@ let AITranslationService = AITranslationService_1 = class AITranslationService {
         }
         try {
             const salt = (new Date).getTime().toString();
-            const curtime = Math.round(new Date().getTime() / 1000).toString();
-            const sign = this.generateSign(text, salt, curtime);
+            const sign = this.generateSign(text, salt);
             this.logger.debug(`开始翻译，原文: ${text}, 源语言: ${from}, 目标语言: ${to}`);
-            const response = await axios_1.default.post(this.youdaoApiUrl, {
-                q: text,
-                from,
-                to,
-                appKey: this.appKey,
-                salt,
-                sign,
-                signType: 'v3',
-                curtime,
+            const response = await axios_1.default.get(this.youdaoApiUrl, {
+                params: {
+                    q: text,
+                    from,
+                    to,
+                    appid: this.appKey,
+                    salt,
+                    sign,
+                },
+                headers: {
+                    dataType: 'jsonp',
+                },
             });
-            console.log(text, from, to, this.appKey, salt, sign, curtime);
-            if (response.data.errorCode === '0') {
-                const translatedText = response.data.translation[0];
+            if (response.data.trans_result) {
+                const translatedText = response.data.trans_result[0].dst;
                 this.logger.debug(`翻译成功，结果: ${translatedText}`);
                 return translatedText;
             }
             else {
-                this.logger.error(`翻译失败，错误码: ${response.data.errorCode}，错误信息: ${JSON.stringify(response.data)}`);
-                const errorMessages = {
-                    '101': '缺少必填的参数',
-                    '102': '不支持的语言类型',
-                    '103': '翻译文本过长',
-                    '104': '不支持的API类型',
-                    '105': '不支持的签名类型',
-                    '106': '不支持的响应类型',
-                    '107': '不支持的传输加密类型',
-                    '108': '应用ID无效',
-                    '109': 'batchLog格式不正确',
-                    '110': '无相关服务的有效实例',
-                    '111': '开发者账号无效',
-                    '113': '查询为空',
-                    '201': '解密失败',
-                    '202': '签名检验失败',
-                    '203': '访问IP地址不在可访问IP列表',
-                    '205': '请求的接口与应用的平台类型不一致',
-                    '206': '因为时间戳无效导致签名校验失败',
-                    '207': '重放请求',
-                    '301': '辞典查询失败',
-                    '302': '翻译查询失败',
-                    '303': '服务端的其它异常',
-                    '304': '会话闲置太久超时',
-                    '401': '账户已经欠费',
-                    '402': 'offlinesdk不可用',
-                    '411': '访问频率受限,请稍后访问',
-                    '412': '长请求过于频繁，请稍后访问',
-                };
-                const errorMessage = errorMessages[response.data.errorCode] || '未知错误';
-                this.logger.error(`翻译错误: ${errorMessage}`);
+                this.logger.error(`翻译失败，错误信息: ${JSON.stringify(response.data)}`);
                 return text;
             }
         }
@@ -116,10 +87,10 @@ let AITranslationService = AITranslationService_1 = class AITranslationService {
         }
     }
     async translateToEnglish(text) {
-        return this.translateText(text, 'zh-CHS', 'en');
+        return this.translateText(text, 'zh', 'en');
     }
     async translateToChinese(text) {
-        return this.translateText(text, 'en', 'zh-CHS');
+        return this.translateText(text, 'en', 'zh');
     }
     async translateBatch(texts, targetLanguage) {
         if (!texts.length) {

@@ -58,7 +58,7 @@ export class QueryMediaDto {
 
   @IsString()
   @IsOptional()
-  sortOrder?: 'ASC' | 'DESC';
+  orderBy?: 'ASC' | 'DESC';
 
   @IsString()
   @IsOptional()

@@ -233,25 +233,18 @@ export class CrawlerService {
 
           // 保存电影基本信息
           const movie = this.mediaRepository.create(movieEntity);
-          const savedMovie = await this.mediaRepository.save(movie);
+          const savedMovie = await this.mediaRepository.save(movie) as unknown as Media;
 
           // 使用 AI 翻译服务翻译标题和描述
-          const [englishTitle, englishDescription] = await Promise.all([
-            this.aiTranslationService.translateToEnglish(movieData.title),
-            this.aiTranslationService.translateToEnglish('暂无描述')
-          ]);
+          const englishTitle = await this.aiTranslationService.translateToEnglish(movieData.title);
 
           this.logger.log(`Translated title: ${movieData.title} -> ${englishTitle}`);
 
           // 使用新方法保存翻译
-          await this.translationService.createTranslationsForNewMedia(savedMovie as unknown as Media, {
+          await this.translationService.createTranslationsForNewMedia(savedMovie, {
             title: {
               zh: movieData.title,
               en: englishTitle
-            },
-            description: {
-              zh: '暂无描述',
-              en: englishDescription
             }
           });
 
