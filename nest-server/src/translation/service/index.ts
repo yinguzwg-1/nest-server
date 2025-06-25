@@ -102,17 +102,17 @@ export class TranslationService {
       }
 
       // 保存描述翻译
-      if (translations.description) {
-        const descriptionTranslations = Object.entries(translations.description).map(([language, value]) => 
-          this.translationRepository.create({
-            mediaId: media.id,
-            field: TranslationField.DESCRIPTION,
-            language,
-            value,
-          })
-        );
-        await queryRunner.manager.save(Translation, descriptionTranslations);
-      }
+      // if (translations.description) {
+      //   const descriptionTranslations = Object.entries(translations.description).map(([language, value]) => 
+      //     this.translationRepository.create({
+      //       mediaId: media.id,
+      //       field: TranslationField.DESCRIPTION,
+      //       language,
+      //       value,
+      //     })
+      //   );
+      //   await queryRunner.manager.save(Translation, descriptionTranslations);
+      // }
 
       await queryRunner.commitTransaction();
       this.logger.log(`Successfully created translations for new media ${media.id}`);

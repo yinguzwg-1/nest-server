@@ -6,26 +6,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CrawlerModule = void 0;
+exports.TrackerModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const service_1 = require("../service");
 const controller_1 = require("../controller");
-const entities_1 = require("../../media/entities");
-const module_1 = require("../../translation/module");
-const crawler_cache_service_1 = require("../service/crawler-cache.service");
-let CrawlerModule = class CrawlerModule {
+const service_1 = require("../service");
+const entities_1 = require("../entities");
+let TrackerModule = class TrackerModule {
 };
-exports.CrawlerModule = CrawlerModule;
-exports.CrawlerModule = CrawlerModule = __decorate([
+exports.TrackerModule = TrackerModule;
+exports.TrackerModule = TrackerModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([entities_1.Media]),
-            module_1.TranslationModule,
+            typeorm_1.TypeOrmModule.forFeature([entities_1.TrackerEvent]),
         ],
-        controllers: [controller_1.CrawlerController],
-        providers: [service_1.CrawlerService, crawler_cache_service_1.CrawlerCacheService],
-        exports: [service_1.CrawlerService, crawler_cache_service_1.CrawlerCacheService],
+        controllers: [controller_1.TrackerController],
+        providers: [service_1.TrackerService],
+        exports: [service_1.TrackerService],
     })
-], CrawlerModule);
+], TrackerModule);
 //# sourceMappingURL=index.js.map

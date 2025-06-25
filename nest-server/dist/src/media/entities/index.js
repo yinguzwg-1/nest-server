@@ -64,7 +64,7 @@ __decorate([
     __metadata("design:type", String)
 ], Media.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)('simple-array'),
+    (0, typeorm_1.Column)('json'),
     __metadata("design:type", Array)
 ], Media.prototype, "cast", void 0);
 __decorate([

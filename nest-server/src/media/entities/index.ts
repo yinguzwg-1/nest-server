@@ -41,7 +41,7 @@ export class Media {
   })
   type: MediaType;
 
-  @Column('simple-array')
+  @Column('json')
   cast: string[];
 
   @Column({ nullable: true })

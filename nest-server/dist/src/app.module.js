@@ -18,6 +18,8 @@ const module_1 = require("./media/module");
 const module_2 = require("./translation/module");
 const cache_module_1 = require("./cache/cache.module");
 const module_3 = require("./crawler/module");
+const module_4 = require("./tracker/module");
+const entities_3 = require("./tracker/entities");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -36,7 +38,7 @@ exports.AppModule = AppModule = __decorate([
                     username: configService.get('DB_USERNAME'),
                     password: configService.get('DB_PASSWORD'),
                     database: configService.get('DB_DATABASE'),
-                    entities: [entities_1.Media, entities_2.Translation],
+                    entities: [entities_1.Media, entities_2.Translation, entities_3.TrackerEvent],
                     synchronize: false,
                 }),
                 inject: [config_1.ConfigService],
@@ -45,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             module_2.TranslationModule,
             cache_module_1.CacheModule,
             module_3.CrawlerModule,
+            module_4.TrackerModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

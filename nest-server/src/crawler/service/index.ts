@@ -11,11 +11,21 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import { CrawlerCacheService } from './crawler-cache.service';
 
 interface CrawlerProgress {
   lastPage: number;
   lastUpdateTime: string;
   source: string;
+}
+
+interface MovieData {
+  title: string;
+  quality: string;
+  cast: string[];
+  link: string;
+  poster: string;
+  backdrop: string;
 }
 
 @Injectable()
@@ -29,6 +39,7 @@ export class CrawlerService {
     private readonly mediaRepository: Repository<Media>,
     private readonly translationService: TranslationService,
     private readonly aiTranslationService: AITranslationService,
+    private readonly crawlerCacheService: CrawlerCacheService,
     private configService: ConfigService,
   ) {
     // 在项目根目录下创建 data 文件夹存储进度文件
@@ -108,10 +119,104 @@ export class CrawlerService {
     }
   }
 
+  /**
+   * 批量处理电影数据，使用缓存和并发翻译优化性能
+   */
+  private async processMoviesBatch(movies: MovieData[]): Promise<void> {
+    if (movies.length === 0) return;
+
+    this.logger.log(`开始批量处理 ${movies.length} 部电影`);
+
+    try {
+      // 1. 批量翻译标题（使用缓存优化）
+      const titles = movies.map(m => m.title);
+      const translations = await this.crawlerCacheService.batchTranslateWithCache(titles);
+      
+      // 创建翻译映射
+      const translationMap = new Map(translations.map(t => [t.text, t.translation]));
+      
+      const moviesWithTranslations = movies.map(movieData => ({
+        ...movieData,
+        englishTitle: translationMap.get(movieData.title) || movieData.title
+      }));
+
+      this.logger.log(`完成 ${moviesWithTranslations.length} 部电影的翻译（缓存命中率: ${this.crawlerCacheService.getCacheStats().size}）`);
+
+      // 2. 批量创建电影实体
+      const movieEntities = moviesWithTranslations.map((movieData, index) => {
+        const randomYear = Math.floor(Math.random() * (2025 - 2015 + 1)) + 2015;
+        const randomRating = (Math.random() * (9.7 - 6.1) + 6.1).toFixed(1);
+        const defaultGenres = ['动作', '剧情'];
+
+        // 处理cast字段，确保是有效的字符串数组
+        const castArray = movieData.cast && movieData.cast.length > 0 
+          ? movieData.cast.filter(actor => actor && actor.trim() !== '')
+          : ['未知演员'];
+
+        // 添加调试日志
+        if (index === 0) {
+          this.logger.debug(`示例cast数据: ${JSON.stringify(castArray)}`);
+        }
+
+        return this.mediaRepository.create({
+          title: movieData.title,
+          description: '暂无描述',
+          poster: movieData.poster ? `${this.baseUrl}${movieData.poster}` : '',
+          backdrop: movieData.backdrop ? `${this.baseUrl}${movieData.backdrop}` : '',
+          rating: parseFloat(randomRating),
+          year: randomYear,
+          genres: defaultGenres,
+          type: MediaType.MOVIE,
+          status: MediaStatus.RELEASED,
+          cast: castArray, // JSON字段，TypeORM会自动处理
+          isImagesDownloaded: false,
+          duration: 0,
+          director: '',
+          boxOffice: 0,
+          views: 0,
+          likes: 0,
+          sourceUrl: movieData.link,
+        });
+      });
+
+      this.logger.log(`创建了 ${movieEntities.length} 个电影实体`);
+
+      // 3. 批量保存电影到数据库
+      const savedMovies = await this.mediaRepository.save(movieEntities);
+      this.logger.log(`批量保存了 ${savedMovies.length} 部电影到数据库`);
+
+      // 4. 批量创建翻译记录
+      const translationPromises = savedMovies.map(async (savedMovie, index) => {
+        const movieData = moviesWithTranslations[index];
+        try {
+          await this.translationService.setTranslations(
+            savedMovie.id,
+            TranslationField.TITLE,
+            {
+              zh: movieData.title,
+              en: movieData.englishTitle
+            }
+          );
+        } catch (error) {
+          this.logger.error(`保存翻译失败 (电影ID: ${savedMovie.id}): ${error.message}`);
+          throw error;
+        }
+      });
+
+      // 5. 批量保存翻译记录
+      await Promise.all(translationPromises);
+      this.logger.log(`批量保存了 ${savedMovies.length} 条翻译记录`);
+
+    } catch (error) {
+      this.logger.error(`批量处理电影数据失败: ${error.message}`);
+      this.logger.error(`错误堆栈: ${error.stack}`);
+      throw error;
+    }
+  }
+
   async crawlMovieList(pageNum: number = 1): Promise<void> {
     let browser;
     try {
-      this.logger.log(`Starting to crawl page ${pageNum}`);
       
       // 启动浏览器
       browser = await puppeteer.launch({
@@ -141,7 +246,6 @@ export class CrawlerService {
     
       // 访问页面
       const url = `${this.baseUrl}/tag/${pageNum}.html`;
-      this.logger.log(`Navigating to ${url}`);
       
       const response = await page.goto(url, {
         waitUntil: 'networkidle0',
@@ -152,8 +256,17 @@ export class CrawlerService {
         throw new Error(`Failed to load page: ${response.status()}`);
       }
 
-      // 等待一下确保页面加载
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 优化：等待特定元素出现而不是固定时间
+      try {
+        await page.waitForSelector('.stui-vodlist__box', { timeout: 10000 });
+        // 额外等待一小段时间确保所有图片加载
+        await page.waitForFunction(() => {
+          const images = document.querySelectorAll('.stui-vodlist__thumb.lazyload');
+          return images.length > 0;
+        }, { timeout: 5000 });
+      } catch (error) {
+        this.logger.warn(`Timeout waiting for elements on page ${pageNum}, continuing anyway`);
+      }
 
       // 获取电影数据
       const movies = await page.evaluate(() => {
@@ -168,7 +281,12 @@ export class CrawlerService {
           // 获取演员信息
           const castElement = element.querySelector('.text.text-overflow.text-muted.hidden-xs');
           const castText = castElement?.textContent?.trim() || '';
-          const cast = castText ? castText.split(',').map(name => name.trim()) : [];
+          // 清理演员数据，过滤空值和无效字符
+          const cast = castText 
+            ? castText.split(',')
+                .map(name => name.trim())
+                .filter(name => name && name.length > 0 && name !== 'undefined' && name !== 'null')
+            : [];
           
           // 获取视频质量
           const qualityElement = element.querySelector('.pic-text.text-right');
@@ -196,63 +314,14 @@ export class CrawlerService {
         return movies;
       });
       
-      this.logger.log(`Found ${movies.length} movies on page ${pageNum}`);
-
-      // 保存到数据库
-      for (const movieData of movies) {
-        try {
-          // 生成随机年份 (2015-2025)
-          const randomYear = Math.floor(Math.random() * (2025 - 2015 + 1)) + 2015;
-          
-          // 生成随机评分 (6.1-9.7)
-          const randomRating = (Math.random() * (9.7 - 6.1) + 6.1).toFixed(1);
-
-          // 生成默认分类
-          const defaultGenres = ['动作', '剧情'];
-
-          // 创建新电影记录
-          const movieEntity = {
-            title: movieData.title,
-            description: '暂无描述',
-            poster: movieData.poster ? `${this.baseUrl}${movieData.poster}` : '',
-            backdrop: movieData.backdrop ? `${this.baseUrl}${movieData.backdrop}` : '',
-            rating: parseFloat(randomRating),
-            year: randomYear,
-            genres: JSON.stringify(defaultGenres),
-            type: MediaType.MOVIE,
-            status: MediaStatus.RELEASED,
-            cast:JSON.stringify(movieData.cast && movieData.cast.length > 0 ? movieData.cast : ['未知演员']),
-            isImagesDownloaded: false,
-            duration: 0,
-            director: '',
-            boxOffice: 0,
-            views: 0,
-            likes: 0,
-            sourceUrl: movieData.link,
-          } as any;
-
-          // 保存电影基本信息
-          const movie = this.mediaRepository.create(movieEntity);
-          const savedMovie = await this.mediaRepository.save(movie) as unknown as Media;
-
-          // 使用 AI 翻译服务翻译标题和描述
-          const englishTitle = await this.aiTranslationService.translateToEnglish(movieData.title);
-
-          this.logger.log(`Translated title: ${movieData.title} -> ${englishTitle}`);
-
-          // 使用新方法保存翻译
-          await this.translationService.createTranslationsForNewMedia(savedMovie, {
-            title: {
-              zh: movieData.title,
-              en: englishTitle
-            }
-          });
-
-          this.logger.log(`Successfully saved movie "${movieData.title}" with translations`);
-        } catch (error) {
-          this.logger.error(`Failed to save movie "${movieData.title}": ${error.message}`);
-        }
+      // 添加调试日志
+      this.logger.log(`提取到 ${movies.length} 部电影数据`);
+      if (movies.length > 0) {
+        this.logger.debug(`示例电影数据: ${JSON.stringify(movies[0], null, 2)}`);
       }
+      
+      // 优化：批量处理和并发翻译
+      await this.processMoviesBatch(movies);
 
       this.logger.log(`Successfully crawled page ${pageNum}, found ${movies.length} movies`);
     } catch (error) {

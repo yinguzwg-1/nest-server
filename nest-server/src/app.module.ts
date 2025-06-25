@@ -9,6 +9,8 @@ import { MediaModule } from './media/module';
 import { TranslationModule } from './translation/module';
 import { CacheModule } from './cache/cache.module';
 import { CrawlerModule } from './crawler/module';
+import { TrackerModule } from './tracker/module';
+import { TrackerEvent } from './tracker/entities';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { CrawlerModule } from './crawler/module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [Media, Translation],
+        entities: [Media, Translation, TrackerEvent],
         synchronize: false,
       }),
       inject: [ConfigService],
@@ -33,6 +35,7 @@ import { CrawlerModule } from './crawler/module';
     TranslationModule,
     CacheModule,
     CrawlerModule,
+    TrackerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -88,15 +88,6 @@ let TranslationService = TranslationService_1 = class TranslationService {
                 }));
                 await queryRunner.manager.save(entities_1.Translation, titleTranslations);
             }
-            if (translations.description) {
-                const descriptionTranslations = Object.entries(translations.description).map(([language, value]) => this.translationRepository.create({
-                    mediaId: media.id,
-                    field: entities_1.TranslationField.DESCRIPTION,
-                    language,
-                    value,
-                }));
-                await queryRunner.manager.save(entities_1.Translation, descriptionTranslations);
-            }
             await queryRunner.commitTransaction();
             this.logger.log(`Successfully created translations for new media ${media.id}`);
         }
