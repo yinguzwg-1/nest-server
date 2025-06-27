@@ -37,25 +37,31 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: './package-lock.json'
+        cache-dependency-path: './nest-server/package-lock.json'
 
     - name: 📦 Install dependencies
-      run: npm ci
+      run: |
+        cd nest-server
+        npm ci
 
     - name: 🔍 Run linting
-      run: npm run lint
+      run: |
+        cd nest-server
+        npm run lint
 
     - name: 🏗️ Build Nest.js application
-      run: npm run build
+      run: |
+        cd nest-server
+        npm run build
 
     - name: ✅ Verify build output
       run: |
         echo "✅ Build completed successfully"
         echo "📁 Current directory: $(pwd)"
-        echo "📁 dist directory contents:"
-        ls -la dist/
+        echo "📁 nest-server/dist directory contents:"
+        ls -la nest-server/dist/
         echo "📁 Total dist size:"
-        du -sh dist/
+        du -sh nest-server/dist/
 
     - name: 🐳 Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -70,8 +76,8 @@ jobs:
     - name: 🐳 Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./
-        file: ./Dockerfile
+        context: ./nest-server
+        file: ./nest-server/Dockerfile
         push: true
         tags: |
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:${{ github.sha }}
