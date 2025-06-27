@@ -1,22 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import * as CryptoJS from 'crypto-js';
-import { Logger } from '@nestjs/common';
 import { MD5 } from './md5';
+
 @Injectable()
 export class AITranslationService {
   private readonly logger = new Logger(AITranslationService.name);
   private readonly appKey: string;
   private readonly appSecret: string;
-  private readonly youdaoApiUrl = 'http://api.fanyi.baidu.com/api/trans/vip/translate';
+  private readonly youdaoApiUrl =
+    'http://api.fanyi.baidu.com/api/trans/vip/translate';
 
   constructor(private configService: ConfigService) {
     this.appKey = this.configService.get<string>('YOUDAO_APP_KEY');
     this.appSecret = this.configService.get<string>('YOUDAO_APP_SECRET');
 
     if (!this.appKey || !this.appSecret) {
-      this.logger.error('有道翻译配置缺失！请检查环境变量 YOUDAO_APP_KEY 和 YOUDAO_APP_SECRET');
+      this.logger.error(
+        '有道翻译配置缺失！请检查环境变量 YOUDAO_APP_KEY 和 YOUDAO_APP_SECRET',
+      );
     } else {
       this.logger.log('有道翻译服务初始化成功');
     }
@@ -29,22 +31,27 @@ export class AITranslationService {
   }
 
   private generateSign(q: string, salt: string): string {
-
-    const str = this.appKey + this.truncate(q) + salt  + this.appSecret;
+    const str = this.appKey + this.truncate(q) + salt + this.appSecret;
     return MD5(str);
   }
 
-  private async translateText(text: string, from: string, to: string): Promise<string> {
+  private async translateText(
+    text: string,
+    from: string,
+    to: string,
+  ): Promise<string> {
     if (!text.trim()) {
       this.logger.warn('翻译文本为空');
       return text;
     }
 
     try {
-      const salt = (new Date).getTime().toString();
+      const salt = new Date().getTime().toString();
       const sign = this.generateSign(text, salt);
 
-      this.logger.debug(`开始翻译，原文: ${text}, 源语言: ${from}, 目标语言: ${to}`);
+      this.logger.debug(
+        `开始翻译，原文: ${text}, 源语言: ${from}, 目标语言: ${to}`,
+      );
 
       const response = await axios.get(this.youdaoApiUrl, {
         params: {
@@ -64,7 +71,9 @@ export class AITranslationService {
         this.logger.debug(`翻译成功，结果: ${translatedText}`);
         return translatedText;
       } else {
-        this.logger.error(`翻译失败，错误信息: ${JSON.stringify(response.data)}`);
+        this.logger.error(
+          `翻译失败，错误信息: ${JSON.stringify(response.data)}`,
+        );
         return text; // 如果翻译失败，返回原文
       }
     } catch (error) {
@@ -89,7 +98,10 @@ export class AITranslationService {
     return this.translateText(text, 'en', 'zh');
   }
 
-  async translateBatch(texts: string[], targetLanguage: 'en' | 'zh'): Promise<string[]> {
+  async translateBatch(
+    texts: string[],
+    targetLanguage: 'en' | 'zh',
+  ): Promise<string[]> {
     if (!texts.length) {
       this.logger.warn('批量翻译文本数组为空');
       return texts;
@@ -104,12 +116,12 @@ export class AITranslationService {
     const translations = await Promise.all(
       texts.map(async (text, index) => {
         // 添加延迟以避免请求过于频繁
-        await new Promise(resolve => setTimeout(resolve, index * 100));
+        await new Promise((resolve) => setTimeout(resolve, index * 100));
         return this.translateText(text, from, to);
-      })
+      }),
     );
 
     this.logger.log(`批量翻译完成，成功翻译 ${translations.length} 条文本`);
     return translations;
   }
-} 
+}

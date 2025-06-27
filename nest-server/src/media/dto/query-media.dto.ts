@@ -1,4 +1,11 @@
-import { IsEnum, IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaType, MediaStatus } from '../types';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -63,4 +70,4 @@ export class QueryMediaDto {
   @IsString()
   @IsOptional()
   search?: string;
-} 
+}

@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsDateString, IsObject, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsObject,
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class TrackerPropertiesDto {
@@ -73,4 +80,4 @@ export class TrackerEventDto {
   @IsString()
   @IsOptional()
   app_id?: string;
-} 
+}

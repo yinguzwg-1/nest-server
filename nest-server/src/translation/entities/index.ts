@@ -1,9 +1,16 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Media } from '../../media/entities';
 
 export enum TranslationField {
   TITLE = 'title',
-  DESCRIPTION = 'description'
+  DESCRIPTION = 'description',
 }
 
 @Entity('translations')
@@ -11,7 +18,9 @@ export class Translation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Media, media => media.translations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Media, (media) => media.translations, {
+    onDelete: 'CASCADE',
+  })
   media: Media;
 
   @Column()
@@ -19,7 +28,7 @@ export class Translation {
 
   @Column({
     type: 'enum',
-    enum: TranslationField
+    enum: TranslationField,
   })
   field: TranslationField;
 
@@ -34,4 +43,4 @@ export class Translation {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}

@@ -5,11 +5,9 @@ import { TrackerService } from '../service';
 import { TrackerEvent } from '../entities';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([TrackerEvent]),
-  ],
+  imports: [TypeOrmModule.forFeature([TrackerEvent])],
   controllers: [TrackerController],
   providers: [TrackerService],
   exports: [TrackerService],
 })
-export class TrackerModule {} 
+export class TrackerModule {}

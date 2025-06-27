@@ -1,4 +1,4 @@
-import { Controller, Post, Query, Get, ParseIntPipe, Logger } from '@nestjs/common';
+import { Controller, Post, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CrawlerService } from '../service';
 
@@ -12,10 +12,17 @@ export class CrawlerController {
 
   @Post('movies')
   @ApiOperation({ summary: '爬取电影列表' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: '页码' })
-  async crawlMovies(@Query('page', new ParseIntPipe({ optional: true })) page: number = 1) {
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: '页码',
+  })
+  async crawlMovies(
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+  ) {
     this.logger.log(`Crawling movies page ${page}`);
     await this.crawlerService.crawlMovieList(page);
     return { message: `Successfully crawled page ${page}` };
   }
-} 
+}

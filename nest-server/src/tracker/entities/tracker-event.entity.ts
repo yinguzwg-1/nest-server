@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('tracker_events')
 @Index(['event_id', 'user_id'])
@@ -47,4 +53,4 @@ export class TrackerEvent {
 
   @CreateDateColumn()
   updated_at: Date;
-} 
+}

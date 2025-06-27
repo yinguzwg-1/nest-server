@@ -6,4 +6,4 @@ export class AppService {
     Logger.log('欢迎使用NestJS服务！数据库连接正常。');
     return '欢迎使用NestJS服务！数据库连接正常。';
   }
-} 
+}

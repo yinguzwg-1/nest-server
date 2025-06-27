@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Body, Query, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MediaService } from '../service';
 import { CreateMediaDto } from '../dto/create-media.dto';
 import { QueryMediaDto } from '../dto/query-media.dto';
@@ -9,7 +16,6 @@ import { LanguageInterceptor } from '../../common/interceptors/language.intercep
 @Controller('media')
 @UseInterceptors(LanguageInterceptor)
 export class MediaController {
-  
   constructor(private readonly mediaService: MediaService) {}
 
   @Post()
@@ -25,5 +31,4 @@ export class MediaController {
   findAll(@Query() query: QueryMediaDto) {
     return this.mediaService.findAllWithTranslationsRaw(query);
   }
-
-} 
+}

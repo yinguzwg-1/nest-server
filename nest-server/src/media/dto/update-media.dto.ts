@@ -1,8 +1,15 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateMediaDto, TranslationsDto } from './create-media.dto';
-import { IsOptional, IsString, IsNumber, IsEnum, IsArray, IsBoolean, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaType, MediaStatus } from '../types';
+import { TranslationsDto } from './create-media.dto';
 
 export class UpdateMediaDto {
   @IsOptional()
@@ -77,4 +84,4 @@ export class UpdateMediaDto {
   @ValidateNested()
   @Type(() => TranslationsDto)
   translations?: TranslationsDto;
-} 
+}

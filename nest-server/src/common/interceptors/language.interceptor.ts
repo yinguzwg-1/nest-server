@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -6,15 +11,17 @@ import { map } from 'rxjs/operators';
 export class LanguageInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const lang = request.headers['accept-language']?.split(',')[0]?.substring(0, 2) || 'zh';
+    const lang =
+      request.headers['accept-language']?.split(',')[0]?.substring(0, 2) ||
+      'zh';
 
     return next.handle().pipe(
-      map(data => {
+      map((data) => {
         if (Array.isArray(data?.items)) {
           // 处理列表数据
           return {
             ...data,
-            items: data.items.map(item => this.transformItem(item, lang))
+            items: data.items.map((item) => this.transformItem(item, lang)),
           };
         } else if (data?.translations) {
           // 处理单个项目
@@ -39,7 +46,8 @@ export class LanguageInterceptor implements NestInterceptor {
 
     // 根据语言选择描述
     if (item.translations.description) {
-      result.description = item.translations.description[lang] || item.description;
+      result.description =
+        item.translations.description[lang] || item.description;
     }
 
     // 删除translations字段
@@ -47,4 +55,4 @@ export class LanguageInterceptor implements NestInterceptor {
 
     return result;
   }
-} 
+}

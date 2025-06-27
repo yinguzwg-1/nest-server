@@ -1,4 +1,16 @@
-import { IsNotEmpty, IsString, IsNumber, IsUrl, IsArray, IsEnum, IsOptional, Min, Max, IsBoolean, ValidateNested, IsObject } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsArray,
+  IsEnum,
+  IsOptional,
+  Min,
+  Max,
+  IsBoolean,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { MediaType, MediaStatus } from '../types';
@@ -129,4 +141,4 @@ export class CreateMediaDto {
   @ValidateNested()
   @Type(() => TranslationsDto)
   translations?: TranslationsDto;
-} 
+}

@@ -6,13 +6,9 @@ import { MediaController } from '../controller';
 import { TranslationModule } from '../../translation/module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Media]),
-    TranslationModule,
-    
-  ],
+  imports: [TypeOrmModule.forFeature([Media]), TranslationModule],
   controllers: [MediaController],
   providers: [MediaService],
   exports: [MediaService],
 })
-export class MediaModule {} 
+export class MediaModule {}

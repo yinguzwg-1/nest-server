@@ -14,7 +14,7 @@ export class AppController {
   getHealth(): { status: string; database: string } {
     return {
       status: 'OK',
-      database: 'Connected to MySQL'
+      database: 'Connected to MySQL',
     };
   }
-} 
+}

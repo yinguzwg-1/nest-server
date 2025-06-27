@@ -20,33 +20,38 @@ export class TrackerService {
 
       // 保存到数据库
       const savedEvent = await this.trackerRepository.save(event);
-      
+
       return savedEvent;
     } catch (error) {
       throw new Error(`创建事件失败: ${error.message}`);
     }
   }
 
-  async createBatchEvents(eventsDto: TrackerEventDto[]): Promise<TrackerEvent[]> {
+  async createBatchEvents(
+    eventsDto: TrackerEventDto[],
+  ): Promise<TrackerEvent[]> {
     try {
       // 转换 DTO 到 Entity
-      const events = eventsDto.map(eventDto => 
+      const events = eventsDto.map((eventDto) =>
         this.trackerRepository.create({
           ...eventDto,
           event_time: new Date(eventDto.event_time),
-        })
+        }),
       );
 
       // 批量保存到数据库
       const savedEvents = await this.trackerRepository.save(events);
-      
+
       return savedEvents;
     } catch (error) {
       throw new Error(`批量创建事件失败: ${error.message}`);
     }
   }
 
-  async getEventsByUserId(userId: string, limit: number = 100): Promise<TrackerEvent[]> {
+  async getEventsByUserId(
+    userId: string,
+    limit: number = 100,
+  ): Promise<TrackerEvent[]> {
     return this.trackerRepository.find({
       where: { user_id: userId },
       order: { event_time: 'DESC' },
@@ -85,7 +90,7 @@ export class TrackerService {
         'event.event_id as event_id',
         'COUNT(*) as event_count',
         'COUNT(DISTINCT event.user_id) as unique_users',
-        'COUNT(DISTINCT event.session_id) as unique_sessions'
+        'COUNT(DISTINCT event.session_id) as unique_sessions',
       ])
       .where('event.event_time >= :startTime', { startTime })
       .groupBy('event.event_id')
@@ -94,4 +99,4 @@ export class TrackerService {
 
     return stats;
   }
-} 
+}

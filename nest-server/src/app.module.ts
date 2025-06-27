@@ -40,4 +40,4 @@ import { TrackerEvent } from './tracker/entities';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {} 
+export class AppModule {}

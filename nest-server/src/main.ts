@@ -14,13 +14,15 @@ async function bootstrap() {
       credentials: true,
     },
   });
-  
+
   // 启用全局验证管道
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    forbidNonWhitelisted: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   // 配置 Swagger
   const config = new DocumentBuilder()
@@ -34,8 +36,8 @@ async function bootstrap() {
   // 启动服务器
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  
+
   logger.log(`应用程序已启动，监听端口: ${port}`);
   logger.log(`API 文档地址: http://localhost:${port}/api`);
 }
-bootstrap(); 
+bootstrap();

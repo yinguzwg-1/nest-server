@@ -14,16 +14,25 @@ export class TranslationService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getTranslation(mediaId: number, field: TranslationField, language: string): Promise<string | null> {
+  async getTranslation(
+    mediaId: number,
+    field: TranslationField,
+    language: string,
+  ): Promise<string | null> {
     const translation = await this.translationRepository.findOne({
-      where: { mediaId, field, language }
+      where: { mediaId, field, language },
     });
     return translation?.value || null;
   }
 
-  async setTranslation(mediaId: number, field: TranslationField, language: string, value: string): Promise<Translation> {
+  async setTranslation(
+    mediaId: number,
+    field: TranslationField,
+    language: string,
+    value: string,
+  ): Promise<Translation> {
     let translation = await this.translationRepository.findOne({
-      where: { mediaId, field, language }
+      where: { mediaId, field, language },
     });
 
     if (translation) {
@@ -34,21 +43,27 @@ export class TranslationService {
         mediaId,
         field,
         language,
-        value
+        value,
       });
       return await this.translationRepository.save(translation);
     }
   }
 
-  async getTranslations(mediaId: number, field: TranslationField): Promise<Record<string, string>> {
+  async getTranslations(
+    mediaId: number,
+    field: TranslationField,
+  ): Promise<Record<string, string>> {
     const translations = await this.translationRepository.find({
       where: { mediaId, field },
     });
 
-    return translations.reduce((acc, translation) => {
-      acc[translation.language] = translation.value;
-      return acc;
-    }, {} as Record<string, string>);
+    return translations.reduce(
+      (acc, translation) => {
+        acc[translation.language] = translation.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }
 
   async setTranslations(
@@ -61,17 +76,23 @@ export class TranslationService {
       await this.translationRepository.delete({ mediaId, field });
 
       // 创建新的翻译
-      const translationEntities = Object.entries(translations).map(([language, value]) => ({
-        mediaId,
-        field,
-        language,
-        value,
-      }));
+      const translationEntities = Object.entries(translations).map(
+        ([language, value]) => ({
+          mediaId,
+          field,
+          language,
+          value,
+        }),
+      );
 
       await this.translationRepository.save(translationEntities);
-      this.logger.log(`Successfully set translations for media ${mediaId}, field ${field}`);
+      this.logger.log(
+        `Successfully set translations for media ${mediaId}, field ${field}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to set translations for media ${mediaId}, field ${field}: ${error.message}`);
+      this.logger.error(
+        `Failed to set translations for media ${mediaId}, field ${field}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -81,7 +102,7 @@ export class TranslationService {
     translations: {
       title?: Record<string, string>;
       description?: Record<string, string>;
-    }
+    },
   ): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -90,20 +111,21 @@ export class TranslationService {
     try {
       // 保存标题翻译
       if (translations.title) {
-        const titleTranslations = Object.entries(translations.title).map(([language, value]) => 
-          this.translationRepository.create({
-            mediaId: media.id,
-            field: TranslationField.TITLE,
-            language,
-            value,
-          })
+        const titleTranslations = Object.entries(translations.title).map(
+          ([language, value]) =>
+            this.translationRepository.create({
+              mediaId: media.id,
+              field: TranslationField.TITLE,
+              language,
+              value,
+            }),
         );
         await queryRunner.manager.save(Translation, titleTranslations);
       }
 
       // 保存描述翻译
       // if (translations.description) {
-      //   const descriptionTranslations = Object.entries(translations.description).map(([language, value]) => 
+      //   const descriptionTranslations = Object.entries(translations.description).map(([language, value]) =>
       //     this.translationRepository.create({
       //       mediaId: media.id,
       //       field: TranslationField.DESCRIPTION,
@@ -115,10 +137,14 @@ export class TranslationService {
       // }
 
       await queryRunner.commitTransaction();
-      this.logger.log(`Successfully created translations for new media ${media.id}`);
+      this.logger.log(
+        `Successfully created translations for new media ${media.id}`,
+      );
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Failed to create translations for new media ${media.id}: ${error.message}`);
+      this.logger.error(
+        `Failed to create translations for new media ${media.id}: ${error.message}`,
+      );
       throw error;
     } finally {
       await queryRunner.release();
@@ -128,4 +154,4 @@ export class TranslationService {
   async deleteTranslations(mediaId: number): Promise<void> {
     await this.translationRepository.delete({ mediaId });
   }
-} 
+}

@@ -4,7 +4,11 @@ import { Repository, Like } from 'typeorm';
 import { Media } from '../entities';
 import { CreateMediaDto } from '../dto/create-media.dto';
 import { UpdateMediaDto } from '../dto/update-media.dto';
-import { MediaListResponseDto, MediaWithTranslationsResponseDto, MediaWithTranslations } from '../dto/media.dto';
+import {
+  MediaListResponseDto,
+  MediaWithTranslationsResponseDto,
+  MediaWithTranslations,
+} from '../dto/media.dto';
 import { QueryMediaDto } from '../dto/query-media.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
@@ -55,14 +59,14 @@ export class MediaService {
         await this.translationService.setTranslations(
           savedMedia.id,
           TranslationField.TITLE,
-          createMediaDto.translations.title
+          createMediaDto.translations.title,
         );
       }
       if (createMediaDto.translations.description) {
         await this.translationService.setTranslations(
           savedMedia.id,
           TranslationField.DESCRIPTION,
-          createMediaDto.translations.description
+          createMediaDto.translations.description,
         );
       }
     }
@@ -75,10 +79,11 @@ export class MediaService {
   async update(id: number, updateMediaDto: UpdateMediaDto): Promise<Media> {
     const media = await this.findOne(id);
     const mediaEntity = media as Media;
-    
+
     // 更新属性
     if (updateMediaDto.title) mediaEntity.title = updateMediaDto.title;
-    if (updateMediaDto.description) mediaEntity.description = updateMediaDto.description;
+    if (updateMediaDto.description)
+      mediaEntity.description = updateMediaDto.description;
     if (updateMediaDto.poster) mediaEntity.poster = updateMediaDto.poster;
     if (updateMediaDto.backdrop) mediaEntity.backdrop = updateMediaDto.backdrop;
     if (updateMediaDto.year) mediaEntity.year = updateMediaDto.year;
@@ -88,11 +93,14 @@ export class MediaService {
     if (updateMediaDto.cast) mediaEntity.cast = updateMediaDto.cast;
     if (updateMediaDto.duration) mediaEntity.duration = updateMediaDto.duration;
     if (updateMediaDto.director) mediaEntity.director = updateMediaDto.director;
-    if (updateMediaDto.boxOffice) mediaEntity.boxOffice = updateMediaDto.boxOffice;
+    if (updateMediaDto.boxOffice)
+      mediaEntity.boxOffice = updateMediaDto.boxOffice;
     if (updateMediaDto.views) mediaEntity.views = updateMediaDto.views;
     if (updateMediaDto.likes) mediaEntity.likes = updateMediaDto.likes;
-    if (updateMediaDto.sourceUrl) mediaEntity.sourceUrl = updateMediaDto.sourceUrl;
-    if (updateMediaDto.isImagesDownloaded !== undefined) mediaEntity.isImagesDownloaded = updateMediaDto.isImagesDownloaded;
+    if (updateMediaDto.sourceUrl)
+      mediaEntity.sourceUrl = updateMediaDto.sourceUrl;
+    if (updateMediaDto.isImagesDownloaded !== undefined)
+      mediaEntity.isImagesDownloaded = updateMediaDto.isImagesDownloaded;
 
     const savedMedia = await this.mediaRepository.save(mediaEntity);
 
@@ -102,14 +110,14 @@ export class MediaService {
         await this.translationService.setTranslations(
           savedMedia.id,
           TranslationField.TITLE,
-          updateMediaDto.translations.title
+          updateMediaDto.translations.title,
         );
       }
       if (updateMediaDto.translations.description) {
         await this.translationService.setTranslations(
           savedMedia.id,
           TranslationField.DESCRIPTION,
-          updateMediaDto.translations.description
+          updateMediaDto.translations.description,
         );
       }
     }
@@ -132,13 +140,13 @@ export class MediaService {
   async findAll(query: QueryMediaDto): Promise<MediaListResponseDto> {
     const cacheKey = this.getCacheKey(`list:${JSON.stringify(query)}`);
     const cached = await this.cacheManager.get<MediaListResponseDto>(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const { page = 1, limit = 10, type, status, year, title } = query;
-    
+
     const where: any = {};
     if (type) where.type = type;
     if (status) where.status = status;
@@ -148,12 +156,11 @@ export class MediaService {
     const [items, total] = await this.mediaRepository.findAndCount({
       where,
       order: {
-        id: 'DESC'
+        id: 'DESC',
       },
       skip: (page - 1) * limit,
       take: limit,
     });
-
 
     const result = {
       items,
@@ -171,7 +178,7 @@ export class MediaService {
   async findOne(id: number): Promise<MediaWithTranslations> {
     const cacheKey = this.getCacheKey(`${id}`);
     const cached = await this.cacheManager.get<MediaWithTranslations>(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
@@ -183,8 +190,14 @@ export class MediaService {
 
     // 获取翻译
     const translations = {
-      title: await this.translationService.getTranslations(media.id, TranslationField.TITLE),
-      description: await this.translationService.getTranslations(media.id, TranslationField.DESCRIPTION)
+      title: await this.translationService.getTranslations(
+        media.id,
+        TranslationField.TITLE,
+      ),
+      description: await this.translationService.getTranslations(
+        media.id,
+        TranslationField.DESCRIPTION,
+      ),
     };
 
     const mediaWithTranslations = { ...media, translations };
@@ -192,20 +205,22 @@ export class MediaService {
     return mediaWithTranslations;
   }
 
-  async search(query: string, page: number = 1, pageSize: number = 10): Promise<MediaListResponseDto> {
+  async search(
+    query: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<MediaListResponseDto> {
     const cacheKey = this.getCacheKey(`search:${query}:${page}:${pageSize}`);
     const cached = await this.cacheManager.get<MediaListResponseDto>(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     const [items, total] = await this.mediaRepository.findAndCount({
-      where: [
-        { title: Like(`%${query}%`) },
-      ],
+      where: [{ title: Like(`%${query}%`) }],
       order: {
-        id: 'DESC'
+        id: 'DESC',
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -225,17 +240,17 @@ export class MediaService {
     return result;
   }
 
-
   async findOneWithTranslationsRaw(id: number): Promise<MediaWithTranslations> {
     const cacheKey = this.getCacheKey(`${id}:with-translations-raw`);
     const cached = await this.cacheManager.get<MediaWithTranslations>(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     // 使用原生SQL进行多表查询
-    const result = await this.mediaRepository.query(`
+    const result = await this.mediaRepository.query(
+      `
       SELECT 
           m.title,
           MAX(CASE WHEN t.language = 'en' THEN t.value END) AS title_en,
@@ -246,7 +261,9 @@ export class MediaService {
           translations t ON m.id = t.mediaId
       GROUP BY 
           m.id;
-    `, [id]);
+    `,
+      [id],
+    );
 
     if (!result || result.length === 0) {
       throw new NotFoundException(`Media with ID ${id} not found`);
@@ -279,10 +296,10 @@ export class MediaService {
     // 处理翻译数据
     const translations = {
       title: {},
-      description: {}
+      description: {},
     };
 
-    result.forEach(row => {
+    result.forEach((row) => {
       if (row.field && row.language && row.value) {
         if (row.field === TranslationField.TITLE) {
           translations.title[row.language] = row.value;
@@ -297,20 +314,34 @@ export class MediaService {
     return mediaWithTranslations;
   }
 
-  async findAllWithTranslationsRaw(query: QueryMediaDto): Promise<MediaWithTranslationsResponseDto> {
-    const cacheKey = this.getCacheKey(`list-with-translations-raw:${JSON.stringify(query)}`);
-    const cached = await this.cacheManager.get<MediaWithTranslationsResponseDto>(cacheKey);
-    
+  async findAllWithTranslationsRaw(
+    query: QueryMediaDto,
+  ): Promise<MediaWithTranslationsResponseDto> {
+    const cacheKey = this.getCacheKey(
+      `list-with-translations-raw:${JSON.stringify(query)}`,
+    );
+    const cached =
+      await this.cacheManager.get<MediaWithTranslationsResponseDto>(cacheKey);
+
     if (cached) {
       return cached;
     }
 
-    const { page = 1, limit = 10, type, status, year, search, sortBy, orderBy } = query;
-    
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      status,
+      year,
+      search,
+      sortBy,
+      orderBy,
+    } = query;
+
     // 构建WHERE条件
     let whereConditions = 'WHERE 1=1';
     const params: any[] = [];
-    
+
     if (type) {
       whereConditions += ' AND m.type = ?';
       params.push(type);
@@ -326,14 +357,15 @@ export class MediaService {
     if (search) {
       whereConditions += ' AND (m.title LIKE ?)';
       params.push(`%${search}%`);
-    } 
-   
+    }
+
     this.logger.log('sortBy', sortBy);
     this.logger.log('orderBy', orderBy);
-    
+
     // 使用原生SQL进行多表查询
     const offset = (page - 1) * limit;
-    const result = await this.mediaRepository.query(`
+    const result = await this.mediaRepository.query(
+      `
       SELECT 
           m.*,
           MAX(CASE WHEN t.language = 'en' THEN t.value END) AS title_en    
@@ -346,21 +378,26 @@ export class MediaService {
           m.id
       ${sortBy ? `ORDER BY m.${sortBy} ${orderBy ? orderBy : 'DESC'}` : 'ORDER BY m.id DESC'}
       LIMIT ? OFFSET ?;
-    `, [...params, limit, offset]);
+    `,
+      [...params, limit, offset],
+    );
     // 获取总数
-      const countResult = await this.mediaRepository.query(`
+    const countResult = await this.mediaRepository.query(
+      `
         SELECT COUNT(DISTINCT m.id) as total
         FROM media m
         ${whereConditions}
        
-      `, params);
-    
+      `,
+      params,
+    );
+
     const total = countResult[0].total;
 
     // 处理结果数据
     const mediaMap = new Map();
-    
-    result.forEach(row => {
+
+    result.forEach((row) => {
       if (!mediaMap.has(row.id)) {
         mediaMap.set(row.id, {
           id: row.id,
@@ -383,7 +420,6 @@ export class MediaService {
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           title_en: row.title_en,
-          
         });
       }
 
@@ -412,5 +448,4 @@ export class MediaService {
     await this.cacheManager.set(cacheKey, result_data);
     return result_data;
   }
-
-} 
+}

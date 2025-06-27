@@ -7,12 +7,9 @@ import { TranslationModule } from '../../translation/module';
 import { CrawlerCacheService } from '../service/crawler-cache.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Media]),
-    TranslationModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Media]), TranslationModule],
   controllers: [CrawlerController],
   providers: [CrawlerService, CrawlerCacheService],
-  exports: [CrawlerService, CrawlerCacheService ],
+  exports: [CrawlerService, CrawlerCacheService],
 })
-export class CrawlerModule {} 
+export class CrawlerModule {}

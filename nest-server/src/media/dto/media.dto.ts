@@ -107,4 +107,4 @@ export interface MediaWithTranslations {
     title?: Record<string, string>;
     description?: Record<string, string>;
   };
-} 
+}

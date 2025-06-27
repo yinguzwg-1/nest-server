@@ -25,4 +25,4 @@ export interface ITrackerEventResponse {
   success: boolean;
   message: string;
   data?: any;
-} 
+}

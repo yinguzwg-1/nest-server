@@ -1,12 +1,12 @@
 export enum MediaType {
   MOVIE = 'movie',
-  TV = 'tv'
+  TV = 'tv',
 }
 
 export enum MediaStatus {
   RELEASED = 'released',
   ONGOING = 'ongoing',
-  UPCOMING = 'upcoming'
+  UPCOMING = 'upcoming',
 }
 
 export interface MultiLanguageString {
@@ -53,4 +53,4 @@ export interface MediaResponse {
   totalPages: number;
   hasNext: boolean;
   hasPrev: boolean;
-} 
+}

@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { MediaType, MediaStatus } from '../types';
 import { Translation } from '../../translation/entities';
 
@@ -31,13 +38,13 @@ export class Media {
   @Column({
     type: 'enum',
     enum: MediaStatus,
-    default: MediaStatus.UPCOMING
+    default: MediaStatus.UPCOMING,
   })
   status: MediaStatus;
 
   @Column({
     type: 'enum',
-    enum: MediaType
+    enum: MediaType,
   })
   type: MediaType;
 
@@ -65,7 +72,7 @@ export class Media {
   @Column({ default: false })
   isImagesDownloaded: boolean;
 
-  @OneToMany(() => Translation, translation => translation.media)
+  @OneToMany(() => Translation, (translation) => translation.media)
   translations: Translation[];
 
   @CreateDateColumn()
@@ -73,5 +80,4 @@ export class Media {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
-
+}

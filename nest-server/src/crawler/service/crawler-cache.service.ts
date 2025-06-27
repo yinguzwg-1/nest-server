@@ -23,7 +23,9 @@ export class CrawlerCacheService {
     const expiry = this.cacheExpiry.get(cacheKey);
 
     if (cached && expiry && Date.now() < expiry) {
-      this.logger.debug(`Cache hit for translation: ${text.substring(0, 20)}...`);
+      this.logger.debug(
+        `Cache hit for translation: ${text.substring(0, 20)}...`,
+      );
       return cached;
     }
 
@@ -49,7 +51,9 @@ export class CrawlerCacheService {
   /**
    * 批量获取翻译（优先使用缓存）
    */
-  async batchTranslateWithCache(texts: string[]): Promise<{ text: string; translation: string }[]> {
+  async batchTranslateWithCache(
+    texts: string[],
+  ): Promise<{ text: string; translation: string }[]> {
     const results: { text: string; translation: string }[] = [];
     const uncachedTexts: string[] = [];
 
@@ -66,10 +70,11 @@ export class CrawlerCacheService {
     // 批量翻译未缓存的文本
     if (uncachedTexts.length > 0) {
       this.logger.log(`需要翻译 ${uncachedTexts.length} 个未缓存的文本`);
-      
+
       const translationPromises = uncachedTexts.map(async (text) => {
         try {
-          const translation = await this.aiTranslationService.translateToEnglish(text);
+          const translation =
+            await this.aiTranslationService.translateToEnglish(text);
           await this.setCachedTranslation(text, translation);
           return { text, translation };
         } catch (error) {
@@ -92,7 +97,7 @@ export class CrawlerCacheService {
     let hash = 0;
     for (let i = 0; i < text.length; i++) {
       const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 转换为32位整数
     }
     return hash.toString();
@@ -118,7 +123,7 @@ export class CrawlerCacheService {
     this.cleanupExpiredCache();
     return {
       size: this.cache.size,
-      hitRate: 0 // 这里可以添加命中率统计
+      hitRate: 0, // 这里可以添加命中率统计
     };
   }
 
@@ -130,4 +135,4 @@ export class CrawlerCacheService {
     this.cacheExpiry.clear();
     this.logger.log('缓存已清空');
   }
-} 
+}
