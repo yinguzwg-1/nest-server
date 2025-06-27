@@ -1,4 +1,4 @@
-name: 🚀 Simple Nest.js Build
+name: 🚀 Nest.js Build (No Cache)
 
 on:
   push:
@@ -25,23 +25,20 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: 'nest-server/nest-server/package-lock.json'
 
     - name: 📦 Install dependencies
       run: |
         echo "📁 当前目录: $(pwd)"
         echo "📁 目录内容:"
         ls -la
-        echo "📁 nest-server 目录:"
-        ls -la nest-server/
-        echo "📁 nest-server/nest-server 目录:"
-        ls -la nest-server/nest-server/
         
         cd nest-server/nest-server
         echo "📁 进入目录: $(pwd)"
         echo "📁 package.json 存在: $(test -f package.json && echo '是' || echo '否')"
+        echo "📁 package-lock.json 存在: $(test -f package-lock.json && echo '是' || echo '否')"
         
+        # 清理缓存并重新安装
+        npm cache clean --force
         npm install --legacy-peer-deps
 
     - name: 🏗️ Build Nest.js application
