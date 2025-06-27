@@ -37,7 +37,6 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: './nest-server/nest-server/package-lock.json'
 
     - name: 📦 Install dependencies
       run: |
