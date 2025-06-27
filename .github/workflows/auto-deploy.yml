@@ -161,13 +161,15 @@ jobs:
           rm -rf node_modules package-lock.json dist
           npm cache clean --force
           
-          # 安装依赖
-          echo "📦 安装依赖..."
-          npm install
+          # 重新生成 package-lock.json
+          echo "📦 重新生成 package-lock.json..."
+          npm install --legacy-peer-deps
           
-          # 构建应用
-          echo "🔨 构建 Nest.js 应用..."
-          npm run build
+          # 检查构建结果
+          if [ ! -d "dist" ]; then
+            echo "🔨 构建 Nest.js 应用..."
+            npm run build
+          fi
           
           # 检查构建结果
           if [ ! -d "dist" ]; then
