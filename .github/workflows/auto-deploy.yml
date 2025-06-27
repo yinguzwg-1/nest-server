@@ -150,8 +150,8 @@ jobs:
           echo "📦 提交: ${{ github.sha }}"
           
           # 检查并创建项目目录
-          PROJECT_DIR="$HOME/demo"
-          NEST_DIR="$PROJECT_DIR/nest-server/nest-server"
+          PROJECT_DIR="$HOME/nest-server"
+          NEST_DIR="$PROJECT_DIR/nest-server"
           echo "📁 项目目录: $PROJECT_DIR"
           echo "📁 Nest.js 目录: $NEST_DIR"
           
@@ -168,10 +168,6 @@ jobs:
             echo "❌ Nest.js 目录不存在: $NEST_DIR"
             echo "📁 当前目录内容:"
             ls -la "$PROJECT_DIR"
-            if [ -d "$PROJECT_DIR/nest-server" ]; then
-              echo "📁 nest-server 目录内容:"
-              ls -la "$PROJECT_DIR/nest-server"
-            fi
             exit 1
           fi
           

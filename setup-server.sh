@@ -23,7 +23,7 @@ echo "当前目录: $(pwd)"
 
 # 2. 创建项目目录
 print_status $BLUE "2. 创建项目目录..."
-PROJECT_DIR="$HOME/demo"
+PROJECT_DIR="$HOME/nest-server"
 mkdir -p "$PROJECT_DIR"
 cd "$PROJECT_DIR"
 
@@ -46,17 +46,10 @@ if [ -d "nest-server" ]; then
     echo "📁 nest-server 目录内容:"
     ls -la nest-server/
     
-    if [ -d "nest-server/nest-server" ]; then
-        echo "📁 nest-server/nest-server 目录内容:"
-        ls -la nest-server/nest-server/
-        
-        if [ -f "nest-server/nest-server/package.json" ]; then
-            print_status $GREEN "✅ package.json 存在"
-        else
-            print_status $RED "❌ package.json 不存在"
-        fi
+    if [ -f "nest-server/package.json" ]; then
+        print_status $GREEN "✅ package.json 存在"
     else
-        print_status $RED "❌ nest-server/nest-server 目录不存在"
+        print_status $RED "❌ package.json 不存在"
     fi
 else
     print_status $RED "❌ nest-server 目录不存在"
@@ -86,10 +79,10 @@ print_status $GREEN "🎉 服务器设置完成！"
 echo ""
 print_status $BLUE "📋 重要信息："
 echo "项目目录: $PROJECT_DIR"
-echo "Nest.js 目录: $PROJECT_DIR/nest-server/nest-server"
+echo "Nest.js 目录: $PROJECT_DIR/nest-server"
 echo ""
 print_status $YELLOW "📋 下一步："
-echo "1. 进入 Nest.js 目录: cd $PROJECT_DIR/nest-server/nest-server"
+echo "1. 进入 Nest.js 目录: cd $PROJECT_DIR/nest-server"
 echo "2. 安装依赖: npm install --legacy-peer-deps"
 echo "3. 构建项目: npm run build"
 echo "4. 启动服务: pm2 start ecosystem.config.js"
