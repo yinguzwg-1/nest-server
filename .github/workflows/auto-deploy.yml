@@ -196,10 +196,22 @@ jobs:
           sudo systemctl restart docker
           
           # 检查 Docker Compose 是否安装
-          if ! command -v docker-compose &> /dev/null; then
+          if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
             echo "📦 安装 Docker Compose..."
             sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
+          fi
+          
+          # 检查 Docker Compose 版本并设置命令
+          if docker compose version &> /dev/null; then
+            COMPOSE_CMD="docker compose"
+            echo "✅ 使用 Docker Compose v2: $(docker compose version)"
+          elif command -v docker-compose &> /dev/null; then
+            COMPOSE_CMD="docker-compose"
+            echo "✅ 使用 Docker Compose v1: $(docker-compose --version)"
+          else
+            echo "❌ Docker Compose 未安装"
+            exit 1
           fi
           
           # 创建 docker-compose.yml 文件
@@ -283,11 +295,11 @@ jobs:
           
           # 停止并删除现有容器
           echo "🛑 停止现有容器..."
-          docker-compose down || true
+          $COMPOSE_CMD down || true
           
           # 启动服务
           echo "🚀 启动 Docker 服务..."
-          docker-compose up -d
+          $COMPOSE_CMD up -d
           
           # 等待服务启动
           echo "⏳ 等待服务启动..."
@@ -295,7 +307,7 @@ jobs:
           
           # 检查服务状态
           echo "📋 检查服务状态..."
-          docker-compose ps
+          $COMPOSE_CMD ps
           
           # 健康检查
           if curl -f http://localhost:3001 > /dev/null 2>&1; then
@@ -304,7 +316,7 @@ jobs:
             echo "📦 部署版本: ${{ github.sha }}"
           else
             echo "⚠️  健康检查失败，但服务可能仍在启动中..."
-            echo "📋 查看日志: docker-compose logs nestjs-api"
+            echo "📋 查看日志: $COMPOSE_CMD logs nestjs-api"
           fi
           
           echo "🎉 Nest.js 自动化部署完成！" 
