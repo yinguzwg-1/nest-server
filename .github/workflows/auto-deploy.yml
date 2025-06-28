@@ -38,23 +38,29 @@ jobs:
         node-version: '18'
 
     - name: 📦 Install dependencies
-      run: npm install --legacy-peer-deps
+      run: |
+        cd nest-server
+        npm install --legacy-peer-deps
 
     - name: 🔍 Run linting (optional)
-      run: npm run lint || echo "⚠️ Linting failed, but continuing with build..."
+      run: |
+        cd nest-server
+        npm run lint || echo "⚠️ Linting failed, but continuing with build..."
       continue-on-error: true
 
     - name: 🏗️ Build Nest.js application
-      run: npm run build
+      run: |
+        cd nest-server
+        npm run build
 
     - name: ✅ Verify build output
       run: |
         echo "✅ Build completed successfully"
         echo "📁 Current directory: $(pwd)"
-        echo "📁 dist directory contents:"
-        ls -la dist/
+        echo "📁 nest-server/dist directory contents:"
+        ls -la nest-server/dist/
         echo "📁 Total dist size:"
-        du -sh dist/
+        du -sh nest-server/dist/
 
     - name: 🐳 Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -69,8 +75,8 @@ jobs:
     - name: 🐳 Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./nest-server
+        file: ./nest-server/Dockerfile
         push: true
         tags: |
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:${{ github.sha }}
