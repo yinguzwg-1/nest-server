@@ -7,14 +7,17 @@ WORKDIR /app
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# 安装所有依赖（包括开发依赖）
+RUN npm ci
 
 # 复制源代码
 COPY . .
 
 # 构建应用
 RUN npm run build
+
+# 删除开发依赖，只保留生产依赖
+RUN npm prune --production
 
 # 创建非 root 用户
 RUN addgroup -g 1001 -S nodejs
