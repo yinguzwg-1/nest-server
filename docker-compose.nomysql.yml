@@ -1,27 +1,4 @@
 services:
-  # MySQL 数据库
-  mysql:
-    image: mysql:8.0
-    container_name: nest_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: qq123456
-      MYSQL_DATABASE: nest_db
-      MYSQL_USER: nest_user
-      MYSQL_PASSWORD: nest_password
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pqq123456"]
-      timeout: 10s
-      retries: 5
-      interval: 10s
-      start_period: 30s
-
   # NestJS API 服务
   nestjs-api:
     build:
@@ -36,14 +13,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DB_HOST: mysql
+      # 数据库配置 - 指向您手动部署的MySQL
+      DB_HOST: localhost  # 或者您的MySQL服务器IP
       DB_PORT: 3306
       DB_USERNAME: root
       DB_PASSWORD: qq123456
       DB_DATABASE: nest_db
-    depends_on:
-      mysql:
-        condition: service_healthy
     volumes:
       - nestjs_logs:/app/logs
     networks:
@@ -62,8 +37,6 @@ services:
           memory: 512M
 
 volumes:
-  mysql_data:
-    driver: local
   nestjs_logs:
     driver: local
 
