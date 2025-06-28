@@ -161,8 +161,13 @@ jobs:
             git clone https://github.com/${{ github.repository }}.git .
           else
             cd "$PROJECT_DIR"
-            echo "📥 拉取最新代码..."
-            git pull origin main
+            echo "📥 处理本地更改并拉取最新代码..."
+            # 保存当前更改
+            git stash push -m "Auto stash before pull - $(date)" || echo "没有需要保存的更改"
+            # 重置到远程分支
+            git fetch origin
+            git reset --hard origin/main || git reset --hard origin/master
+            git clean -fd
           fi
           
           # 检查 Docker 是否安装
@@ -185,7 +190,7 @@ jobs:
           # 创建 docker-compose.yml 文件
           echo "📝 创建 docker-compose.yml 文件..."
           cat > docker-compose.yml << 'EOF'
-          version: '3.3'
+          version: '2.4'
           
           services:
             # MySQL 数据库
@@ -252,9 +257,14 @@ jobs:
           echo "🔐 登录到 GitHub Container Registry..."
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # 拉取最新镜像
+          # 拉取最新镜像（增加超时时间）
           echo "📥 拉取最新 Docker 镜像..."
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest
+          timeout 300 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest || {
+            echo "⚠️ 镜像拉取超时，尝试使用本地构建..."
+            cd nest-server
+            docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest .
+            cd ..
+          }
           
           # 停止并删除现有容器
           echo "🛑 停止现有容器..."
