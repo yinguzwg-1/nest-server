@@ -1,14 +1,17 @@
-# 使用官方 Node.js 18 镜像作为基础镜像
-FROM node:18-alpine
+# 使用官方 Node.js 18 镜像作为基础镜像（使用完整版本避免网络问题）
+FROM node:18
 
 # 设置工作目录
 WORKDIR /app
+
+# 设置 npm 配置，使用淘宝镜像源
+RUN npm config set registry https://registry.npmmirror.com
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
 # 安装所有依赖（包括开发依赖）
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 # 复制源代码
 COPY . .
@@ -20,8 +23,7 @@ RUN npm run build
 RUN npm prune --production
 
 # 创建非 root 用户
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
+RUN groupadd -r nodejs && useradd -r -g nodejs nestjs
 
 # 更改文件所有权
 RUN chown -R nestjs:nodejs /app

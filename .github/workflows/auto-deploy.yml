@@ -180,6 +180,21 @@ jobs:
             sudo systemctl enable docker
           fi
           
+          # 配置 Docker 镜像源（解决网络问题）
+          echo "🔧 配置 Docker 镜像源..."
+          sudo mkdir -p /etc/docker
+          sudo tee /etc/docker/daemon.json <<-'EOF'
+          {
+            "registry-mirrors": [
+              "https://docker.mirrors.ustc.edu.cn",
+              "https://hub-mirror.c.163.com",
+              "https://mirror.baidubce.com"
+            ]
+          }
+          EOF
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker
+          
           # 检查 Docker Compose 是否安装
           if ! command -v docker-compose &> /dev/null; then
             echo "📦 安装 Docker Compose..."
