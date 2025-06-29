@@ -1,17 +1,28 @@
-# 使用官方 Node.js 18 镜像作为基础镜像（使用完整版本避免网络问题）
+# 使用官方 Node.js 18 镜像作为基础镜像
 FROM node:18
 
 # 设置工作目录
 WORKDIR /app
 
-# 设置 npm 配置，使用淘宝镜像源
-RUN npm config set registry https://registry.npmmirror.com
+# 设置环境变量
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# 设置 npm 配置，使用淘宝镜像源避免网络问题
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set timeout 300000
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
 # 安装所有依赖（包括开发依赖）
-RUN npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund --prefer-offline || \
+    (echo "⚠️ npm ci 失败，尝试 npm install..." && npm install --no-audit --no-fund)
 
 # 复制源代码
 COPY . .
