@@ -14,8 +14,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm config set registry https://registry.npmmirror.com && \
     npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 10000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set timeout 300000
+    npm config set fetch-retry-maxtimeout 120000
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
