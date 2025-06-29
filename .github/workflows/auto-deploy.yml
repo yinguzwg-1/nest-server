@@ -39,18 +39,15 @@ jobs:
 
     - name: 📦 Install dependencies
       run: |
-        cd nest-server
         npm install --legacy-peer-deps
 
     - name: 🔍 Run linting (optional)
       run: |
-        cd nest-server
         npm run lint || echo "⚠️ Linting failed, but continuing with build..."
       continue-on-error: true
 
     - name: 🏗️ Build Nest.js application
       run: |
-        cd nest-server
         npm run build
 
     - name: ✅ Verify build output
@@ -290,9 +287,7 @@ jobs:
           echo "📥 拉取最新 Docker 镜像..."
           timeout 300 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest || {
             echo "⚠️ 镜像拉取超时，尝试使用本地构建..."
-            cd nest-server
             docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest .
-            cd ..
           }
           
           # 停止并删除现有容器
