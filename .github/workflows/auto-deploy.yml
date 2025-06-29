@@ -212,8 +212,6 @@ jobs:
           # 创建 docker-compose.yml 文件
           echo "📝 创建 docker-compose.yml 文件..."
           cat > docker-compose.yml << 'EOF'
-          version: '3.8'
-          
           services:
             # MySQL 数据库
             mysql:
@@ -291,6 +289,13 @@ jobs:
           echo "🛑 停止现有容器..."
           $COMPOSE_CMD down || true
           
+          # 预拉取 MySQL 镜像（解决网络问题）
+          echo "📥 预拉取 MySQL 镜像..."
+          timeout 300 docker pull mysql:8.0 || {
+            echo "⚠️ MySQL 镜像拉取失败，尝试使用国内镜像源..."
+            docker pull mysql/mysql-server:8.0 || echo "MySQL 镜像拉取失败，将在启动时重试"
+          }
+          
           # 启动服务
           echo "🚀 启动 Docker 服务..."
           $COMPOSE_CMD up -d
@@ -303,14 +308,31 @@ jobs:
           echo "📋 检查服务状态..."
           $COMPOSE_CMD ps
           
-          # 健康检查
-          if curl -f http://localhost:3001 > /dev/null 2>&1; then
-            echo "✅ 部署成功！"
-            echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
-            echo "📦 部署版本: ${{ github.sha }}"
+          # 检查容器是否正在运行
+          if $COMPOSE_CMD ps | grep -q "Up"; then
+            echo "✅ 容器已启动"
+            
+            # 等待更长时间让服务完全启动
+            echo "⏳ 等待服务完全启动..."
+            sleep 30
+            
+            # 健康检查
+            if curl -f http://localhost:3001 > /dev/null 2>&1; then
+              echo "✅ 部署成功！"
+              echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
+              echo "📦 部署版本: ${{ github.sha }}"
+            else
+              echo "⚠️ 健康检查失败，查看详细日志..."
+              echo "📋 MySQL 日志:"
+              $COMPOSE_CMD logs mysql
+              echo "📋 NestJS 日志:"
+              $COMPOSE_CMD logs nestjs-api
+            fi
           else
-            echo "⚠️  健康检查失败，但服务可能仍在启动中..."
-            echo "📋 查看日志: $COMPOSE_CMD logs nestjs-api"
+            echo "❌ 容器启动失败"
+            echo "📋 查看启动日志:"
+            $COMPOSE_CMD logs
+            exit 1
           fi
           
           echo "🎉 Nest.js 自动化部署完成！" 

@@ -1,0 +1,60 @@
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: nest_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: qq123456
+      MYSQL_DATABASE: nest_db
+      MYSQL_USER: nest_user
+      MYSQL_PASSWORD: nest_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # NestJS API 服务
+  nestjs-api:
+    image: ghcr.io/your-username/nest-server/nestjs:latest
+    container_name: nest_api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: qq123456
+      DB_DATABASE: nest_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - nestjs_logs:/app/logs
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mysql_data:
+    driver: local
+  nestjs_logs:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge 
