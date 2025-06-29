@@ -4,10 +4,8 @@ services:
   # NestJS API 服务
   nestjs-api:
     build:
-      context: ./nest-server
+      context: .
       dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
     container_name: nest_api
     restart: unless-stopped
     ports:
@@ -15,8 +13,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      # 数据库配置 - 指向您手动部署的MySQL
-      DB_HOST: localhost  # 或者您的MySQL服务器IP
+      # 数据库配置
+      DB_HOST: localhost
       DB_PORT: 3306
       DB_USERNAME: root
       DB_PASSWORD: qq123456
