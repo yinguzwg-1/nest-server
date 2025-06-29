@@ -25,8 +25,8 @@ RUN npm install --no-audit --no-fund
 # 复制源代码
 COPY . .
 
-# 构建应用（直接使用 TypeScript 编译器，不依赖 @nestjs/cli）
-RUN npx tsc -p tsconfig.json
+# 构建应用（使用生产专用的 TypeScript 配置）
+RUN npx tsc -p tsconfig.build.json
 
 # 删除开发依赖，只保留生产依赖
 RUN npm prune --production
