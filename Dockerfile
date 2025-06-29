@@ -19,17 +19,14 @@ RUN npm config set registry https://registry.npmmirror.com && \
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装所有依赖（包括开发依赖）- 使用更可靠的方法
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-
-# 验证 @nestjs/cli 是否正确安装
-RUN ls -la node_modules/.bin/nest || echo "nest 命令不存在，尝试重新安装"
+# 安装所有依赖（包括开发依赖）
+RUN npm install --no-audit --no-fund
 
 # 复制源代码
 COPY . .
 
-# 构建应用（使用 node_modules/.bin/nest 直接路径）
-RUN ./node_modules/.bin/nest build
+# 构建应用（直接使用 TypeScript 编译器，不依赖 @nestjs/cli）
+RUN npx tsc -p tsconfig.json
 
 # 删除开发依赖，只保留生产依赖
 RUN npm prune --production
