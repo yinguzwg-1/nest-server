@@ -7,6 +7,22 @@ set -e
 
 echo "🚀 开始部署 NestJS 服务到阿里云..."
 
+# 0. 检查并安装 Docker Compose
+echo "🔍 检查 Docker Compose..."
+if ! command -v docker-compose &> /dev/null; then
+    echo "📦 安装 Docker Compose..."
+    # 下载 Docker Compose
+    sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    
+    # 创建软链接
+    sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+    
+    echo "✅ Docker Compose 安装完成"
+else
+    echo "✅ Docker Compose 已安装"
+fi
+
 # 1. 配置 Docker 镜像源（解决网络超时问题）
 echo "📦 配置 Docker 镜像源..."
 sudo mkdir -p /etc/docker
@@ -51,7 +67,7 @@ docker system prune -f
 
 # 4. 构建和启动服务
 echo "🏗️ 构建 NestJS 服务..."
-docker-compose build --no-cache nestjs-api
+DOCKER_BUILDKIT=1 docker-compose build --no-cache nestjs-api
 
 echo "🚀 启动服务..."
 docker-compose up -d
