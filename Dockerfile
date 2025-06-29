@@ -25,8 +25,8 @@ RUN npm install --no-audit --no-fund
 # 复制源代码
 COPY . .
 
-# 构建应用（使用 npx 确保 nest 命令可用）
-RUN npx nest build
+# 构建应用（使用 npm run build 确保 nest 命令可用）
+RUN npm run build
 
 # 删除开发依赖，只保留生产依赖
 RUN npm prune --production
