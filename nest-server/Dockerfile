@@ -19,15 +19,14 @@ RUN npm config set registry https://registry.npmmirror.com && \
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装所有依赖（包括开发依赖）
-RUN npm ci --no-audit --no-fund --prefer-offline || \
-    (echo "⚠️ npm ci 失败，尝试 npm install..." && npm install --no-audit --no-fund)
+# 安装所有依赖（包括开发依赖）- 使用更可靠的方法
+RUN npm install --no-audit --no-fund
 
 # 复制源代码
 COPY . .
 
-# 构建应用
-RUN npm run build
+# 构建应用（确保 nest 命令可用）
+RUN npx nest build
 
 # 删除开发依赖，只保留生产依赖
 RUN npm prune --production
