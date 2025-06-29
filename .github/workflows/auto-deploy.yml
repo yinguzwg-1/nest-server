@@ -83,6 +83,8 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: |
+          NODE_ENV=production
 
     - name: ✅ Build Summary
       run: |
@@ -118,7 +120,6 @@ jobs:
         echo "✅ SSH 配置检查通过"
         echo "🌐 目标服务器: ${{ secrets.HOST }}"
         echo "👤 用户名: ${{ secrets.USERNAME }}"
-        echo "🔑 SSH 密钥: ${#SSH_KEY} 字符"
 
     - name: 🔍 Test server connectivity
       uses: appleboy/ssh-action@v1.0.3
@@ -217,7 +218,7 @@ jobs:
           # 创建 docker-compose.yml 文件
           echo "📝 创建 docker-compose.yml 文件..."
           cat > docker-compose.yml << 'EOF'
-          version: '2.4'
+          version: '3.8'
           
           services:
             # MySQL 数据库
@@ -257,7 +258,8 @@ jobs:
                 DB_PASSWORD: qq123456
                 DB_DATABASE: nest_db
               depends_on:
-                - mysql
+                mysql:
+                  condition: service_healthy
               volumes:
                 - nestjs_logs:/app/logs
               networks:
