@@ -1,4 +1,4 @@
-name: 🚀 Nest.js Auto Build and Deploy
+name: 🚀 Nest.js Auto Build and Deploy with PM2
 
 on:
   push:
@@ -131,7 +131,7 @@ jobs:
           echo "当前目录: $(pwd)"
           echo "✅ 连接测试完成"
 
-    - name: 🚀 Deploy to server
+    - name: 🚀 Deploy to server with PM2
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
@@ -140,7 +140,7 @@ jobs:
         port: ${{ secrets.PORT || '22' }}
         command_timeout: "600s"
         script: |
-          echo "🚀 开始自动化部署 Nest.js 应用..."
+          echo "🚀 开始自动化部署 Nest.js 应用 (PM2)..."
           echo "🌍 环境: ${{ github.event.inputs.environment || 'production' }}"
           echo "📦 提交: ${{ github.sha }}"
           
@@ -165,184 +165,138 @@ jobs:
             git clean -fd
           fi
           
-          # 检查 Docker 是否安装
-          if ! command -v docker &> /dev/null; then
-            echo "📦 安装 Docker..."
-            curl -fsSL https://get.docker.com -o get-docker.sh
-            sh get-docker.sh
-            sudo usermod -aG docker $USER
-            sudo systemctl start docker
-            sudo systemctl enable docker
+          # 检查 Node.js 是否安装
+          if ! command -v node &> /dev/null; then
+            echo "📦 安装 Node.js..."
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
           fi
           
-          # 配置 Docker 镜像源（解决网络问题）
-          echo "🔧 配置 Docker 镜像源..."
-          sudo mkdir -p /etc/docker
-          sudo tee /etc/docker/daemon.json <<-'EOF'
-          {
-             "registry-mirrors": ["https://docker.registry.cyou",
-              "https://docker-cf.registry.cyou",
-              "https://dockercf.jsdelivr.fyi",
-              "https://docker.jsdelivr.fyi",
-              "https://dockertest.jsdelivr.fyi",
-              "https://mirror.aliyuncs.com",
-              "https://dockerproxy.com",
-              "https://mirror.baidubce.com",
-              "https://docker.m.daocloud.io",
-              "https://docker.nju.edu.cn",
-              "https://docker.mirrors.sjtug.sjtu.edu.cn",
-              "https://docker.mirrors.ustc.edu.cn",
-              "https://mirror.iscas.ac.cn",
-              "https://docker.rainbond.cc"],
-              "dns": [ "114.114.114.114", "8.8.8.8","8.8.4.4", "1.1.1.1" ]
-          }
-          EOF
-          sudo systemctl daemon-reload
-          sudo systemctl restart docker
-          
-          # 检查 Docker Compose 是否安装
-          if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-            echo "📦 安装 Docker Compose..."
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
+          # 检查 npm 是否安装
+          if ! command -v npm &> /dev/null; then
+            echo "📦 安装 npm..."
+            sudo apt-get install -y npm
           fi
           
-          # 检查 Docker Compose 版本并设置命令
-          if docker compose version &> /dev/null; then
-            COMPOSE_CMD="docker compose"
-            echo "✅ 使用 Docker Compose v2: $(docker compose version)"
-          elif command -v docker-compose &> /dev/null; then
-            COMPOSE_CMD="docker-compose"
-            echo "✅ 使用 Docker Compose v1: $(docker-compose --version)"
+          # 检查 PM2 是否安装
+          if ! command -v pm2 &> /dev/null; then
+            echo "📦 安装 PM2..."
+            sudo npm install -g pm2
+          fi
+          
+          # 检查 MySQL 是否安装和运行
+          if ! command -v mysql &> /dev/null; then
+            echo "📦 安装 MySQL..."
+            sudo apt-get update
+            sudo apt-get install -y mysql-server
+            sudo systemctl start mysql
+            sudo systemctl enable mysql
+            
+            # 配置 MySQL
+            echo "🔧 配置 MySQL..."
+            sudo mysql -e "CREATE DATABASE IF NOT EXISTS nest_db;"
+            sudo mysql -e "CREATE USER IF NOT EXISTS 'nest_user'@'localhost' IDENTIFIED BY 'nest_password';"
+            sudo mysql -e "GRANT ALL PRIVILEGES ON nest_db.* TO 'nest_user'@'localhost';"
+            sudo mysql -e "FLUSH PRIVILEGES;"
           else
-            echo "❌ Docker Compose 未安装"
-            exit 1
+            echo "✅ MySQL 已安装"
+            # 确保 MySQL 服务运行
+            sudo systemctl start mysql || true
           fi
           
-          # 创建 docker-compose.yml 文件
-          echo "📝 创建 docker-compose.yml 文件..."
-          cat > docker-compose.yml << 'EOF'
-          services:
-            # MySQL 数据库
-            mysql:
-              image: mysql:8.0
-              container_name: nest_mysql
-              restart: unless-stopped
-              environment:
-                MYSQL_ROOT_PASSWORD: qq123456
-                MYSQL_DATABASE: nest_db
-                MYSQL_USER: nest_user
-                MYSQL_PASSWORD: nest_password
-              ports:
-                - "3306:3306"
-              volumes:
-                - mysql_data:/var/lib/mysql
-              networks:
-                - app-network
-              healthcheck:
-                test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-                timeout: 20s
-                retries: 10
+          # 安装项目依赖
+          echo "📦 安装项目依赖..."
+          npm install --legacy-peer-deps
           
-            # NestJS API 服务
-            nestjs-api:
-              image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest
-              container_name: nest_api
-              restart: unless-stopped
-              ports:
-                - "3001:3001"
-              environment:
-                NODE_ENV: production
-                PORT: 3001
-                DB_HOST: mysql
-                DB_PORT: 3306
-                DB_USERNAME: root
-                DB_PASSWORD: qq123456
-                DB_DATABASE: nest_db
-              depends_on:
-                mysql:
-                  condition: service_healthy
-              volumes:
-                - nestjs_logs:/app/logs
-              networks:
-                - app-network
-              healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 40s
+          # 构建项目
+          echo "🏗️ 构建项目..."
+          npm run build
           
-          volumes:
-            mysql_data:
-              driver: local
-            nestjs_logs:
-              driver: local
-          
-          networks:
-            app-network:
-              driver: bridge
+          # 创建 PM2 配置文件
+          echo "📝 创建 PM2 配置文件..."
+          cat > ecosystem.config.js << 'EOF'
+          module.exports = {
+            apps: [{
+              name: 'nest-server',
+              script: 'dist/src/main.js',
+              instances: 'max',
+              exec_mode: 'cluster',
+              env: {
+                NODE_ENV: 'production',
+                PORT: 3001,
+                DB_HOST: 'localhost',
+                DB_PORT: 3306,
+                DB_USERNAME: 'nest_user',
+                DB_PASSWORD: 'nest_password',
+                DB_DATABASE: 'nest_db'
+              },
+              env_production: {
+                NODE_ENV: 'production',
+                PORT: 3001,
+                DB_HOST: 'localhost',
+                DB_PORT: 3306,
+                DB_USERNAME: 'nest_user',
+                DB_PASSWORD: 'nest_password',
+                DB_DATABASE: 'nest_db'
+              },
+              error_file: './logs/err.log',
+              out_file: './logs/out.log',
+              log_file: './logs/combined.log',
+              time: true,
+              max_memory_restart: '1G',
+              restart_delay: 4000,
+              max_restarts: 10,
+              min_uptime: '10s',
+              watch: false,
+              ignore_watch: ['node_modules', 'logs', 'dist'],
+              merge_logs: true,
+              log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+            }]
+          };
           EOF
           
-          # 登录到 GitHub Container Registry
-          echo "🔐 登录到 GitHub Container Registry..."
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          # 创建日志目录
+          mkdir -p logs
           
-          # 拉取最新镜像（增加超时时间）
-          echo "📥 拉取最新 Docker 镜像..."
-          timeout 300 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest || {
-            echo "⚠️ 镜像拉取超时，尝试使用本地构建..."
-            docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nestjs:latest .
-          }
+          # 停止现有 PM2 进程
+          echo "🛑 停止现有 PM2 进程..."
+          pm2 stop nest-server || true
+          pm2 delete nest-server || true
           
-          # 停止并删除现有容器
-          echo "🛑 停止现有容器..."
-          $COMPOSE_CMD down || true
+          # 启动应用
+          echo "🚀 启动 Nest.js 应用..."
+          pm2 start ecosystem.config.js --env production
           
-          # 预拉取 MySQL 镜像（解决网络问题）
-          echo "📥 预拉取 MySQL 镜像..."
-          timeout 300 docker pull mysql:8.0 || {
-            echo "⚠️ MySQL 镜像拉取失败，尝试使用国内镜像源..."
-            docker pull mysql/mysql-server:8.0 || echo "MySQL 镜像拉取失败，将在启动时重试"
-          }
+          # 保存 PM2 配置
+          pm2 save
           
-          # 启动服务
-          echo "🚀 启动 Docker 服务..."
-          $COMPOSE_CMD up -d
+          # 设置 PM2 开机自启
+          pm2 startup
           
           # 等待服务启动
           echo "⏳ 等待服务启动..."
-          sleep 30
+          sleep 10
           
           # 检查服务状态
           echo "📋 检查服务状态..."
-          $COMPOSE_CMD ps
+          pm2 status
+          pm2 logs nest-server --lines 20
           
-          # 检查容器是否正在运行
-          if $COMPOSE_CMD ps | grep -q "Up"; then
-            echo "✅ 容器已启动"
-            
-            # 等待更长时间让服务完全启动
-            echo "⏳ 等待服务完全启动..."
-            sleep 30
-            
-            # 健康检查
-            if curl -f http://localhost:3001 > /dev/null 2>&1; then
-              echo "✅ 部署成功！"
-              echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
-              echo "📦 部署版本: ${{ github.sha }}"
-            else
-              echo "⚠️ 健康检查失败，查看详细日志..."
-              echo "📋 MySQL 日志:"
-              $COMPOSE_CMD logs mysql
-              echo "📋 NestJS 日志:"
-              $COMPOSE_CMD logs nestjs-api
-            fi
+          # 健康检查
+          echo "🔍 执行健康检查..."
+          if curl -f http://localhost:3001 > /dev/null 2>&1; then
+            echo "✅ 部署成功！"
+            echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
+            echo "📦 部署版本: ${{ github.sha }}"
+            echo "📊 PM2 状态:"
+            pm2 show nest-server
           else
-            echo "❌ 容器启动失败"
-            echo "📋 查看启动日志:"
-            $COMPOSE_CMD logs
+            echo "⚠️ 健康检查失败，查看详细日志..."
+            echo "📋 PM2 日志:"
+            pm2 logs nest-server --lines 50
+            echo "📋 应用日志:"
+            tail -n 50 logs/combined.log || echo "日志文件不存在"
             exit 1
           fi
           
-          echo "🎉 Nest.js 自动化部署完成！" 
+          echo "🎉 Nest.js PM2 自动化部署完成！" 
