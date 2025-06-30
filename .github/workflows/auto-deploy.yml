@@ -195,8 +195,8 @@ jobs:
             # 配置 MySQL
             echo "🔧 配置 MySQL..."
             sudo mysql -e "CREATE DATABASE IF NOT EXISTS nest_db;"
-            sudo mysql -e "CREATE USER IF NOT EXISTS 'nest_user'@'localhost' IDENTIFIED BY 'nest_password';"
-            sudo mysql -e "GRANT ALL PRIVILEGES ON nest_db.* TO 'nest_user'@'localhost';"
+            sudo mysql -e "CREATE USER IF NOT EXISTS root@localhost IDENTIFIED BY 'qq123456';"
+            sudo mysql -e "GRANT ALL PRIVILEGES ON nest_db.* TO root@localhost;"
             sudo mysql -e "FLUSH PRIVILEGES;"
           else
             echo "✅ MySQL 已安装"
@@ -226,8 +226,8 @@ jobs:
                 PORT: 3001,
                 DB_HOST: 'localhost',
                 DB_PORT: 3306,
-                DB_USERNAME: 'nest_user',
-                DB_PASSWORD: 'nest_password',
+                DB_USERNAME: 'root',
+                DB_PASSWORD: 'qq123456',
                 DB_DATABASE: 'nest_db'
               },
               env_production: {
@@ -235,8 +235,8 @@ jobs:
                 PORT: 3001,
                 DB_HOST: 'localhost',
                 DB_PORT: 3306,
-                DB_USERNAME: 'nest_user',
-                DB_PASSWORD: 'nest_password',
+                DB_USERNAME: 'root',
+                DB_PASSWORD: 'qq123456',
                 DB_DATABASE: 'nest_db'
               },
               error_file: './logs/err.log',
