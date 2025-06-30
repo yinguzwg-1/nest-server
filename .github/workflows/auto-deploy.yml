@@ -193,7 +193,8 @@ jobs:
               "https://docker.mirrors.sjtug.sjtu.edu.cn",
               "https://docker.mirrors.ustc.edu.cn",
               "https://mirror.iscas.ac.cn",
-              "https://docker.rainbond.cc"]
+              "https://docker.rainbond.cc"],
+              "dns": [ "114.114.114.114", "8.8.8.8","8.8.4.4", "1.1.1.1" ]
           }
           EOF
           sudo systemctl daemon-reload
