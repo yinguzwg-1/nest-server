@@ -102,7 +102,7 @@ pm2 startup
 
 # 等待服务启动
 log_info "等待服务启动..."
-sleep 10
+sleep 20
 
 # 检查服务状态
 log_info "检查服务状态..."
@@ -110,13 +110,21 @@ pm2 status
 
 # 健康检查
 log_info "执行健康检查..."
-if curl -f http://localhost:3001 > /dev/null 2>&1; then
-    log_success "部署成功！"
-    log_info "API 地址: http://localhost:3001"
-    log_info "PM2 状态:"
-    pm2 show nest-server
-else
-    log_error "健康检查失败"
+for i in {1..30}; do
+    if curl -f http://localhost:3001 > /dev/null 2>&1; then
+        log_success "部署成功！"
+        log_info "API 地址: http://localhost:3001"
+        log_info "PM2 状态:"
+        pm2 show nest-server
+        break
+    else
+        log_info "等待应用启动... ($i/30)"
+        sleep 2
+    fi
+done
+
+if [ $i -eq 30 ]; then
+    log_error "健康检查失败，应用启动超时"
     log_info "查看 PM2 日志:"
     pm2 logs nest-server --lines 20
     log_info "查看应用日志:"

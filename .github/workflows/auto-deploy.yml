@@ -240,7 +240,7 @@ jobs:
                 DB_USERNAME: 'deploy_user',
                 DB_PASSWORD: 'qq123456',
                 DB_DATABASE: 'nest_db',
-                 YOUDAO_APP_KEY: '20220529001233310',
+                YOUDAO_APP_KEY: '20220529001233310',
                 YOUDAO_APP_SECRET: 'yuM_bOR5cbjZVttocWs1'
               },
               error_file: './logs/err.log',
@@ -279,7 +279,7 @@ jobs:
           
           # 等待服务启动
           echo "⏳ 等待服务启动..."
-          sleep 10
+          sleep 20
           
           # 检查服务状态
           echo "📋 检查服务状态..."
@@ -288,14 +288,22 @@ jobs:
           
           # 健康检查
           echo "🔍 执行健康检查..."
-          if curl -f http://localhost:3001 > /dev/null 2>&1; then
-            echo "✅ 部署成功！"
-            echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
-            echo "📦 部署版本: ${{ github.sha }}"
-            echo "📊 PM2 状态:"
-            pm2 show nest-server
-          else
-            echo "⚠️ 健康检查失败，查看详细日志..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001 > /dev/null 2>&1; then
+              echo "✅ 部署成功！"
+              echo "🌐 API 地址: http://${{ secrets.HOST }}:3001"
+              echo "📦 部署版本: ${{ github.sha }}"
+              echo "📊 PM2 状态:"
+              pm2 show nest-server
+              break
+            else
+              echo "⏳ 等待应用启动... ($i/30)"
+              sleep 2
+            fi
+          done
+          
+          if [ $i -eq 30 ]; then
+            echo "❌ 健康检查失败，应用启动超时"
             echo "📋 PM2 日志:"
             pm2 logs nest-server --lines 50
             echo "📋 应用日志:"
