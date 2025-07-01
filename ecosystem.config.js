@@ -11,7 +11,12 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 3001,
+        DB_HOST: '223.4.248.176',
+        DB_PORT: 3306,
+        DB_USERNAME: 'deploy_user',
+        DB_PASSWORD: 'qq123456',
+        DB_DATABASE: 'nest_db'
       },
       error_file: './logs/err-1.log',
       out_file: './logs/out-1.log',
