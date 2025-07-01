@@ -31,10 +31,6 @@ export class Media {
 
   @Column('decimal', { precision: 3, scale: 1 })
   rating: number;
-
-  @Column('json')
-  genres: string[];
-
   @Column({
     type: 'enum',
     enum: MediaStatus,
@@ -48,8 +44,6 @@ export class Media {
   })
   type: MediaType;
 
-  @Column('json')
-  cast: string[];
 
   @Column({ nullable: true })
   duration: number;

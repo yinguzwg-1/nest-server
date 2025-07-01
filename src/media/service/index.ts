@@ -42,7 +42,6 @@ export class MediaService {
     media.rating = createMediaDto.rating;
     media.status = createMediaDto.status;
     media.type = createMediaDto.type;
-    media.cast = createMediaDto.cast;
     media.duration = createMediaDto.duration;
     media.director = createMediaDto.director;
     media.boxOffice = createMediaDto.boxOffice;
@@ -90,7 +89,6 @@ export class MediaService {
     if (updateMediaDto.rating) mediaEntity.rating = updateMediaDto.rating;
     if (updateMediaDto.status) mediaEntity.status = updateMediaDto.status;
     if (updateMediaDto.type) mediaEntity.type = updateMediaDto.type;
-    if (updateMediaDto.cast) mediaEntity.cast = updateMediaDto.cast;
     if (updateMediaDto.duration) mediaEntity.duration = updateMediaDto.duration;
     if (updateMediaDto.director) mediaEntity.director = updateMediaDto.director;
     if (updateMediaDto.boxOffice)
@@ -281,7 +279,6 @@ export class MediaService {
       rating: result[0].rating,
       status: result[0].status,
       type: result[0].type,
-      cast: result[0].cast.split(','),
       duration: result[0].duration,
       director: result[0].director,
       boxOffice: result[0].boxOffice,
@@ -409,7 +406,7 @@ export class MediaService {
           rating: row.rating,
           status: row.status,
           type: row.type,
-          cast: row.cast,
+
           duration: row.duration,
           director: row.director,
           boxOffice: row.boxOffice,

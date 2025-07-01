@@ -21,7 +21,6 @@ interface CrawlerProgress {
 interface MovieData {
   title: string;
   quality: string;
-  cast: string[];
   link: string;
   poster: string;
   backdrop: string;
@@ -162,19 +161,6 @@ export class CrawlerService {
       const movieEntities = moviesWithTranslations.map((movieData, index) => {
         const randomYear = Math.floor(Math.random() * (2025 - 2015 + 1)) + 2015;
         const randomRating = (Math.random() * (9.7 - 6.1) + 6.1).toFixed(1);
-        const defaultGenres = ['动作', '剧情'];
-
-        // 处理cast字段，确保是有效的字符串数组
-        const castArray =
-          movieData.cast && movieData.cast.length > 0
-            ? movieData.cast.filter((actor) => actor && actor.trim() !== '')
-            : ['未知演员'];
-
-        // 添加调试日志
-        if (index === 0) {
-          this.logger.debug(`示例cast数据: ${JSON.stringify(castArray)}`);
-        }
-
         return this.mediaRepository.create({
           title: movieData.title,
           description: '暂无描述',
@@ -184,10 +170,8 @@ export class CrawlerService {
             : '',
           rating: parseFloat(randomRating),
           year: randomYear,
-          genres: defaultGenres,
           type: MediaType.MOVIE,
           status: MediaStatus.RELEASED,
-          cast: castArray, // JSON字段，TypeORM会自动处理
           isImagesDownloaded: false,
           duration: 0,
           director: '',
@@ -247,6 +231,14 @@ export class CrawlerService {
           '--disable-accelerated-2d-canvas',
           '--disable-gpu',
           '--window-size=1920x1080',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-field-trial-config',
+          '--disable-ipc-flooding-protection',
+          '--memory-pressure-off',
         ],
       });
 
@@ -265,21 +257,56 @@ export class CrawlerService {
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       });
 
+      // 优化页面性能设置
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        // 阻止加载图片、字体、样式表等资源以提高速度
+        if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+          req.abort();
+        } else {
+          req.continue();
+        }
+      });
+
       // 访问页面
       const url = `${this.baseUrl}/tag/${pageNum}.html`;
 
-      const response = await page.goto(url, {
-        waitUntil: 'networkidle0',
-        timeout: 30000,
-      });
+      // 增加超时时间并添加重试机制
+      let response;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          this.logger.log(`尝试访问页面 ${pageNum} (第 ${retryCount + 1} 次尝试)`);
+          
+          response = await page.goto(url, {
+            waitUntil: 'networkidle0',
+            timeout: 60000, // 增加到60秒
+          });
 
-      if (!response.ok()) {
-        throw new Error(`Failed to load page: ${response.status()}`);
+          if (!response.ok()) {
+            throw new Error(`Failed to load page: ${response.status()}`);
+          }
+          
+          // 如果成功，跳出重试循环
+          break;
+        } catch (error) {
+          retryCount++;
+          this.logger.warn(`第 ${retryCount} 次尝试失败: ${error.message}`);
+          
+          if (retryCount >= maxRetries) {
+            throw new Error(`访问页面 ${pageNum} 失败，已重试 ${maxRetries} 次: ${error.message}`);
+          }
+          
+          // 等待一段时间后重试
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       }
 
       // 优化：等待特定元素出现而不是固定时间
       try {
-        await page.waitForSelector('.stui-vodlist__box', { timeout: 10000 });
+        await page.waitForSelector('.stui-vodlist__box', { timeout: 20000 });
         // 额外等待一小段时间确保所有图片加载
         await page.waitForFunction(
           () => {
@@ -288,11 +315,11 @@ export class CrawlerService {
             );
             return images.length > 0;
           },
-          { timeout: 5000 },
+          { timeout: 10000 },
         );
       } catch (error) {
         this.logger.warn(
-          `Timeout waiting for elements on page ${pageNum}, continuing anyway`,
+          `Timeout waiting for elements on page ${pageNum}, continuing anyway: ${error.message}`,
         );
       }
 
@@ -305,25 +332,6 @@ export class CrawlerService {
           // 获取标题
           const titleElement = element.querySelector('.title.text-overflow a');
           const title = titleElement?.textContent?.trim() || '';
-
-          // 获取演员信息
-          const castElement = element.querySelector(
-            '.text.text-overflow.text-muted.hidden-xs',
-          );
-          const castText = castElement?.textContent?.trim() || '';
-          // 清理演员数据，过滤空值和无效字符
-          const cast = castText
-            ? castText
-                .split(',')
-                .map((name) => name.trim())
-                .filter(
-                  (name) =>
-                    name &&
-                    name.length > 0 &&
-                    name !== 'undefined' &&
-                    name !== 'null',
-                )
-            : [];
 
           // 获取视频质量
           const qualityElement = element.querySelector('.pic-text.text-right');
@@ -342,7 +350,6 @@ export class CrawlerService {
             movies.push({
               title,
               quality,
-              cast,
               link,
               poster: imageUrl,
               backdrop: imageUrl,

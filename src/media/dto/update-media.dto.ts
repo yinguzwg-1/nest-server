@@ -35,11 +35,6 @@ export class UpdateMediaDto {
   @IsOptional()
   @IsNumber()
   rating?: number;
-
-  @IsOptional()
-  @IsArray()
-  genres?: string[];
-
   @IsOptional()
   @IsEnum(MediaStatus)
   status?: MediaStatus;
@@ -47,10 +42,6 @@ export class UpdateMediaDto {
   @IsOptional()
   @IsEnum(MediaType)
   type?: MediaType;
-
-  @IsOptional()
-  @IsArray()
-  cast?: string[];
 
   @IsOptional()
   @IsNumber()

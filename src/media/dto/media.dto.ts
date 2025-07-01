@@ -29,9 +29,6 @@ export class MediaResponseDto {
   @ApiProperty()
   status: string;
 
-  @ApiProperty({ type: [String] })
-  genres: string[];
-
   @ApiProperty({ required: false })
   duration?: number;
 
@@ -53,8 +50,6 @@ export class MediaResponseDto {
   @ApiProperty({ required: false })
   network?: string;
 
-  @ApiProperty({ type: [String] })
-  cast: string[];
 
   @ApiProperty()
   createdAt: Date;
@@ -93,7 +88,7 @@ export interface MediaWithTranslations {
   rating: number;
   status: string;
   type: string;
-  cast: string[];
+
   duration?: number;
   director?: string;
   boxOffice?: number;

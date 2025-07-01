@@ -69,12 +69,6 @@ export class CreateMediaDto {
   @ApiProperty({ description: '状态', enum: MediaStatus })
   @IsEnum(MediaStatus)
   status: MediaStatus;
-
-  @ApiProperty({ description: '类型', isArray: true })
-  @IsArray()
-  @IsString({ each: true })
-  genres: string[];
-
   // 电影特有字段
   @ApiProperty({ description: '时长（分钟）', required: false })
   @IsOptional()
@@ -112,10 +106,6 @@ export class CreateMediaDto {
   @IsString()
   network?: string;
 
-  @ApiProperty({ description: '演员阵容', isArray: true })
-  @IsArray()
-  @IsString({ each: true })
-  cast: string[];
 
   @ApiProperty({ description: '来源URL', required: false })
   @IsOptional()
