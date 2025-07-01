@@ -16,7 +16,9 @@ module.exports = {
         DB_PORT: 3306,
         DB_USERNAME: 'deploy_user',
         DB_PASSWORD: 'qq123456',
-        DB_DATABASE: 'nest_db'
+        DB_DATABASE: 'nest_db',
+        YOUDAO_APP_KEY: '20220529001233310',
+        YOUDAO_APP_SECRET: 'yuM_bOR5cbjZVttocWs1'
       },
       error_file: './logs/err-1.log',
       out_file: './logs/out-1.log',
