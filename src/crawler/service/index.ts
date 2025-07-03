@@ -239,6 +239,55 @@ export class CrawlerService {
           '--disable-field-trial-config',
           '--disable-ipc-flooding-protection',
           '--memory-pressure-off',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-images',
+          '--disable-javascript',
+          '--disable-css',
+          '--disable-fonts',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-extensions-with-background-pages',
+          '--disable-domain-reliability',
+          '--disable-features=TranslateUI',
+          '--disable-hang-monitor',
+          '--disable-ipc-flooding-protection',
+          '--disable-prompt-on-repost',
+          '--disable-renderer-backgrounding',
+          '--disable-sync-preferences',
+          '--disable-threaded-animation',
+          '--disable-threaded-scrolling',
+          '--disable-web-resources',
+          '--disable-web-security',
+          '--disable-xss-auditor',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--no-pings',
+          '--no-zygote',
+          '--single-process',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-background-timer-throttling',
+          '--disable-background-networking',
+          '--disable-default-apps',
+          '--disable-extensions',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--mute-audio',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-field-trial-config',
+          '--disable-ipc-flooding-protection',
+          '--memory-pressure-off',
         ],
       });
 
@@ -281,8 +330,8 @@ export class CrawlerService {
           this.logger.log(`尝试访问页面 ${pageNum} (第 ${retryCount + 1} 次尝试)`);
           
           response = await page.goto(url, {
-            waitUntil: 'networkidle0',
-            timeout: 60000, // 增加到60秒
+            waitUntil: 'domcontentloaded', // 改为更快的等待策略
+            timeout: 120000, // 增加到120秒
           });
 
           if (!response.ok()) {
