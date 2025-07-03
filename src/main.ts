@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     cors: {
-      origin: '*', // 允许所有来源
+      origin: ['http://223.4.248.176:8080', 'http://localhost:8080'], // 允许特定来源
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
       credentials: true,
     },
