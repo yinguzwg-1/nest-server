@@ -24,6 +24,21 @@ export class AITranslationService {
     }
   }
 
+  // 获取配置的延迟时间
+  private getTranslationDelay(): number {
+    return this.configService.get<number>('TRANSLATION_DELAY', 1500);
+  }
+
+  // 获取配置的最大重试次数
+  private getMaxRetries(): number {
+    return this.configService.get<number>('TRANSLATION_MAX_RETRIES', 3);
+  }
+
+  // 获取配置的超时时间
+  private getTimeout(): number {
+    return this.configService.get<number>('TRANSLATION_TIMEOUT', 10000);
+  }
+
   private truncate(q: string): string {
     const len = q.length;
     if (len <= 20) return q;
@@ -39,11 +54,15 @@ export class AITranslationService {
     text: string,
     from: string,
     to: string,
+    retryCount: number = 0,
   ): Promise<string> {
     if (!text.trim()) {
       this.logger.warn('翻译文本为空');
       return text;
     }
+
+    const maxRetries = this.getMaxRetries();
+    const baseDelay = this.getTranslationDelay();
 
     try {
       const salt = new Date().getTime().toString();
@@ -65,16 +84,33 @@ export class AITranslationService {
         headers: {
           dataType: 'jsonp',
         },
+        timeout: this.getTimeout(),
       });
+
       if (response.data.trans_result) {
         const translatedText = response.data.trans_result[0].dst;
         this.logger.debug(`翻译成功，结果: ${translatedText}`);
         return translatedText;
       } else {
-        this.logger.error(
-          `翻译失败，错误信息: ${JSON.stringify(response.data)}`,
-        );
-        return text; // 如果翻译失败，返回原文
+        // 检查是否是访问限制错误
+        if (response.data.error_code === '54003') {
+          this.logger.warn(`访问限制错误 (54003)，当前重试次数: ${retryCount}`);
+          
+          if (retryCount < maxRetries) {
+            const delay = baseDelay * Math.pow(2, retryCount); // 指数退避
+            this.logger.log(`等待 ${delay}ms 后重试...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return this.translateText(text, from, to, retryCount + 1);
+          } else {
+            this.logger.error(`翻译失败，已达到最大重试次数: ${JSON.stringify(response.data)}`);
+            return text; // 返回原文
+          }
+        } else {
+          this.logger.error(
+            `翻译失败，错误信息: ${JSON.stringify(response.data)}`,
+          );
+          return text; // 如果翻译失败，返回原文
+        }
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -82,6 +118,14 @@ export class AITranslationService {
         if (error.response) {
           this.logger.error(`响应状态: ${error.response.status}`);
           this.logger.error(`响应数据: ${JSON.stringify(error.response.data)}`);
+          
+          // 如果是访问限制错误，尝试重试
+          if (error.response.data?.error_code === '54003' && retryCount < maxRetries) {
+            const delay = baseDelay * Math.pow(2, retryCount);
+            this.logger.log(`网络错误，等待 ${delay}ms 后重试...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return this.translateText(text, from, to, retryCount + 1);
+          }
         }
       } else {
         this.logger.error(`未知错误: ${error.message}`);
@@ -113,13 +157,26 @@ export class AITranslationService {
     this.logger.log(`开始批量翻译 ${texts.length} 条文本`);
 
     // 有道翻译 API 不支持批量翻译，所以我们需要逐个翻译
-    const translations = await Promise.all(
-      texts.map(async (text, index) => {
-        // 添加延迟以避免请求过于频繁
-        await new Promise((resolve) => setTimeout(resolve, index * 100));
-        return this.translateText(text, from, to);
-      }),
-    );
+    // 使用串行处理而不是并行，以避免触发频率限制
+    const translations: string[] = [];
+    
+    for (let i = 0; i < texts.length; i++) {
+      const text = texts[i];
+      this.logger.debug(`翻译第 ${i + 1}/${texts.length} 条文本: ${text}`);
+      
+      try {
+        const translation = await this.translateText(text, from, to);
+        translations.push(translation);
+        
+        // 增加延迟以避免触发频率限制
+        if (i < texts.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, this.getTranslationDelay()));
+        }
+      } catch (error) {
+        this.logger.error(`翻译第 ${i + 1} 条文本失败: ${error.message}`);
+        translations.push(text); // 失败时返回原文
+      }
+    }
 
     this.logger.log(`批量翻译完成，成功翻译 ${translations.length} 条文本`);
     return translations;

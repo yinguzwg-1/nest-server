@@ -71,20 +71,26 @@ export class CrawlerCacheService {
     if (uncachedTexts.length > 0) {
       this.logger.log(`需要翻译 ${uncachedTexts.length} 个未缓存的文本`);
 
-      const translationPromises = uncachedTexts.map(async (text) => {
+      // 使用串行处理而不是并行，以避免触发API频率限制
+      for (let i = 0; i < uncachedTexts.length; i++) {
+        const text = uncachedTexts[i];
         try {
-          const translation =
-            await this.aiTranslationService.translateToEnglish(text);
+          this.logger.debug(`翻译第 ${i + 1}/${uncachedTexts.length} 个文本: ${text.substring(0, 20)}...`);
+          
+          const translation = await this.aiTranslationService.translateToEnglish(text);
           await this.setCachedTranslation(text, translation);
-          return { text, translation };
+          results.push({ text, translation });
+          
+          // 添加延迟以避免触发频率限制
+          if (i < uncachedTexts.length - 1) {
+            const delay = this.configService.get<number>('TRANSLATION_DELAY', 1500);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
         } catch (error) {
           this.logger.warn(`翻译失败 "${text}": ${error.message}`);
-          return { text, translation: text }; // 翻译失败时使用原文
+          results.push({ text, translation: text }); // 翻译失败时使用原文
         }
-      });
-
-      const newTranslations = await Promise.all(translationPromises);
-      results.push(...newTranslations);
+      }
     }
 
     return results;
