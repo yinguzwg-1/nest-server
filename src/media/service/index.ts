@@ -197,8 +197,8 @@ export class MediaService {
         TranslationField.DESCRIPTION,
       ),
     };
-
-    const mediaWithTranslations = { ...media, translations };
+    this.logger.log('translations',  translations.title.en);
+    const mediaWithTranslations = { ...media, title_en: translations.title.en, translations };
     await this.cacheManager.set(cacheKey, mediaWithTranslations);
     return mediaWithTranslations;
   }

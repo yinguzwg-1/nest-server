@@ -98,6 +98,7 @@ export interface MediaWithTranslations {
   isImagesDownloaded: boolean;
   createdAt: Date;
   updatedAt: Date;
+  title_en?: string;
   translations?: {
     title?: Record<string, string>;
     description?: Record<string, string>;
