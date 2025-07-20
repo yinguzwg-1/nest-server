@@ -37,15 +37,20 @@ jobs:
       with:
         node-version: '18'
 
+    - name: 📦 Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: latest
+
     - name: 📦 Install dependencies
-      run: npm install --legacy-peer-deps
+      run: pnpm install --frozen-lockfile
 
     - name: 🔍 Run linting (optional)
-      run: npm run lint || echo "⚠️ Linting failed, but continuing with build..."
+      run: pnpm run lint || echo "⚠️ Linting failed, but continuing with build..."
       continue-on-error: true
 
     - name: 🏗️ Build Nest.js application
-      run: npm run build
+      run: pnpm run build
 
     - name: ✅ Verify build output
       run: |
@@ -161,16 +166,21 @@ jobs:
             sudo npm install -g pm2
           fi
           
+          if ! command -v pnpm &> /dev/null; then
+            echo "📦 安装 pnpm..."
+            sudo npm install -g pnpm
+          fi
+          
           # 确保 MySQL 服务运行
           sudo systemctl start mysql || true
           
           # 安装项目依赖
           echo "📦 安装项目依赖..."
-          npm install --legacy-peer-deps
+          pnpm install --frozen-lockfile
           
           # 构建项目
           echo "🏗️ 构建项目..."
-          npm run build
+          pnpm run build
           
           # 创建 PM2 配置文件
           echo "📝 创建 PM2 配置文件..."
