@@ -32,14 +32,17 @@ export class TrackerEvent {
   @Column({ type: 'json', nullable: true })
   properties?: {
     url?: string;
+    route?: string;
+    language?: string;
+    page_url?: string;
     referrer?: string;
+    module_id?: string;
+    timestamp?: string;
+    user_agent?: string;
     screen_width?: number;
     screen_height?: number;
-    viewport_width?: number;
-    viewport_height?: number;
-    language?: string;
-    user_agent?: string;
-    page?: number;
+    module_name?: string;
+    
   };
 
   @Column({ type: 'varchar', length: 20, nullable: true })

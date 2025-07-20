@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TrackerController } from '../controller';
 import { TrackerService } from '../service';
 import { TrackerEvent } from '../entities';
+import { RedisModule } from '../../redis/module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TrackerEvent])],
+  imports: [TypeOrmModule.forFeature([TrackerEvent]), RedisModule],
   controllers: [TrackerController],
   providers: [TrackerService],
   exports: [TrackerService],

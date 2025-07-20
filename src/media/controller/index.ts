@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   Param,
   Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { MediaService } from '../service';
 import { CreateMediaDto } from '../dto/create-media.dto';
@@ -32,6 +33,7 @@ export class MediaController {
   @ApiOperation({ summary: '获取媒体列表' })
   @ApiResponse({ status: 200, description: '获取成功' })
   findAll(@Query() query: QueryMediaDto) {
+
     return this.mediaService.findAllWithTranslationsRaw(query);
   }
 
@@ -41,4 +43,5 @@ export class MediaController {
   findOne(@Param('id') id: string) {
     return this.mediaService.findOne(Number(id));
   }
+  
 }
