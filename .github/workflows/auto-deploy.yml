@@ -35,7 +35,7 @@ jobs:
     - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
 
     - name: 📦 Setup pnpm
       uses: pnpm/action-setup@v2
@@ -157,7 +157,7 @@ jobs:
           # 快速检查必要工具（只在需要时安装）
           if ! command -v node &> /dev/null; then
             echo "📦 安装 Node.js..."
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
             sudo apt-get install -y nodejs
           fi
           
