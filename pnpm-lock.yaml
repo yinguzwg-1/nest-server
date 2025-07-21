@@ -56,6 +56,9 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
+      crypto:
+        specifier: ^1.0.1
+        version: 1.0.1
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -1272,6 +1275,10 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+
+  crypto@1.0.1:
+    resolution: {integrity: sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==}
+    deprecated: This package is no longer supported. It's now a built-in Node module. If you've depended on crypto, you should switch to the one that's built-in.
 
   data-uri-to-buffer@6.0.2:
     resolution: {integrity: sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw==}
@@ -4135,6 +4142,8 @@ snapshots:
       which: 2.0.2
 
   crypto-js@4.2.0: {}
+
+  crypto@1.0.1: {}
 
   data-uri-to-buffer@6.0.2: {}
 
