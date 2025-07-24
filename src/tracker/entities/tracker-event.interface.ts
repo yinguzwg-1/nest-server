@@ -1,24 +1,29 @@
 export interface TrackerEventDto {
-  event_id?: string;
-  event_time?: Date;
-  user_id?: string;
-  session_id?: string;
-  device_fingerprint?: string;
-  properties?: {
-    url?: string;
-    route?: string;
-    language?: string;
-    page_url?: string;
-    referrer?: string;
-    module_id?: string;
-    timestamp?: string;
-    user_agent?: string;
-    screen_width?: number;
-    screen_height?: number;
-    module_name?: string;
-  };
-  sdk_version?: string;
-  app_id?: string;
+  event_id: string,
+  event_time: string,
+  user_id: string,
+  session_id: string,
+  properties: {
+    url: string,
+    referrer: string,
+    screen_width: number,
+    screen_height: number,
+    viewport_width: number,
+    viewport_height: number,
+    language: string,
+    user_agent: string,
+    page_name: string,
+    page_title: string,
+    timestamp: string,
+    lcp: number,
+    fcp: number,
+    ttfb: number,
+    fid: number,
+    performance_timestamp: number
+  },
+  sdk_version: string,
+  app_id: string,
+  module: string
 }
 
 export interface ModuleStats {

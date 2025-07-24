@@ -50,7 +50,7 @@ export class TrackerController {
     }
   }
 
-  @Post()
+  @Post('batch')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe({ transform: true }))
   async trackBatchEvents(
@@ -58,7 +58,7 @@ export class TrackerController {
   ): Promise<ITrackerEventResponse> {
     try {
       await this.trackerService.createBatchEvents(eventsDto);
-
+      
       return {
         success: true,
         message: `批量事件追踪成功，共处理 ${eventsDto.length} 条事件`,
@@ -85,15 +85,20 @@ export class TrackerController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
   async getTrackerEvents(
-    @Query('page') page: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '100',
   ): Promise<ITrackerEventResponse> {
     try {
-      const result = await this.trackerService.getEvents();
+      const pageNum = parseInt(page) || 1;
+      const limitNum = Math.min(parseInt(limit) || 100, 1000); // 最大限制1000条
+      
+      const result = await this.trackerService.getEvents(pageNum, limitNum);
       return {
         success: true,
         message: `获取用户事件成功，共 ${result.total} 条记录`,
         data: result,
       };
+     
     } catch (error) {
       return {
         success: false,
@@ -101,5 +106,11 @@ export class TrackerController {
         data: null,
       };
     }
+  }
+
+  @Get('frontend-performance')
+  @HttpCode(HttpStatus.OK)
+  async getFrontendPerformance(): Promise<ITrackerEventResponse> {
+    return this.trackerService.getFrontendPerformance();
   }
 }

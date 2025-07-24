@@ -10,8 +10,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     cors: {
-      origin: ['http://223.4.248.176:8080', 'http://localhost:8080', 'http://zwg.autos'], // 允许特定来源
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+      origin: ['http://223.4.248.176:8080', 'https://223.4.248.176:8080', 'http://localhost:8080', 'http://localhost:3000', 'https://zwg.autos', 'http://zwg.autos'], // 允许特定来源
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       credentials: true,
     },
   });

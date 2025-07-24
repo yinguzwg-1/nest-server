@@ -35,28 +35,62 @@ export class TrackerService {
   }
 
   async getEvents(
+    page: number = 1,
+    limit: number = 100,
   ): Promise<UserEventsResponse> {
-    // 获取用户的所有事件总数
-    const total = await this.trackerRepository.count();
-    // 获取分页的事件列表
-    const events = await this.trackerRepository.find({
-      order: { event_time: 'DESC' },
+    try {
+      // 获取用户的所有事件总数
+      const total = await this.trackerRepository.count();
       
-    });
-
-    // 获取用户的所有事件用于统计
-    const allUserEvents = await this.trackerRepository.find({
-      order: { event_time: 'DESC' },
-    });
-
-    // 计算统计数据
-    const stats = this.calculateUserStats(allUserEvents);
-    return {
-      events,
-      total,
-      hasMore: false,
-      stats,
-    };
+      // 计算偏移量
+      const offset = (page - 1) * limit;
+      
+      // 获取分页的事件列表
+      const events = await this.trackerRepository.find({
+        order: { event_time: 'DESC' },
+        skip: offset,
+        take: limit,
+      });
+      
+      // 获取用户的所有事件用于统计（不限制数量，确保统计准确性）
+      const allUserEvents = await this.trackerRepository.find({
+        order: { event_time: 'DESC' },
+      });
+      
+      // 计算统计数据
+      const stats = this.calculateUserStats(allUserEvents);
+      
+      return {
+        events,
+        total,
+        hasMore: offset + limit < total,
+        stats,
+      };
+    } catch (error) {
+      console.error('Error in getEvents:', error);
+      // 如果出错，返回基本数据
+      const total = await this.trackerRepository.count();
+      const offset = (page - 1) * limit;
+      const events = await this.trackerRepository.find({
+        order: { event_time: 'DESC' },
+        skip: offset,
+        take: limit,
+      });
+      
+      return {
+        events,
+        total,
+        hasMore: offset + limit < total,
+        stats: {
+          totalEvents: 0,
+          uniqueSessions: 0,
+          todayEvents: 0,
+          moduleStats: [],
+          deviceStats: { web: 0, mobile: 0, unknown: 0 },
+          uniqueUsers: 0
+        },
+      };
+    }
   }
 
   private calculateUserStats(events: TrackerEvent[]): UserEventsResponse['stats'] {
@@ -67,7 +101,7 @@ export class TrackerService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEvents = events.filter(e => {
-      const eventDate = e.event_time || e.created_at;
+      const eventDate = new Date(e.event_time);
       return eventDate >= today;
     }).length;
 
@@ -90,8 +124,8 @@ export class TrackerService {
     };
     
     events.forEach(event => {
-      const moduleName = event.properties?.module_name || 'Unknown Module';
-      const moduleId = event.properties?.module_id || 'unknown';
+      const moduleName = event.module || 'Unknown Module';
+      const moduleId = event.module || 'unknown';
       // 只使用 moduleId 作为唯一键，避免因语言不同导致的重复统计
       const key = moduleId;
 
@@ -109,8 +143,8 @@ export class TrackerService {
       const moduleStat = moduleStatsMap.get(key)!;
       moduleStat.count++;
       
-      if (event.properties?.route) {
-        moduleStat.routes.add(event.properties.route);
+      if (event.properties?.url) {
+        moduleStat.routes.add(event.properties.url);
       }
     });
 
@@ -195,10 +229,17 @@ export class TrackerService {
 
     return stats;
   }
-
+  async getFrontendPerformance(): Promise<any> {
+    return this.trackerRepository.find({
+      where: { event_id: 'page_view' },
+      order: { event_time: 'DESC' },
+    });
+  }
   // 从 Redis 队列处理事件数据并保存到数据库
   async processEventFromQueue(eventData: any): Promise<void> {
     try {
+  
+
       // 转换数据到 Entity
       const event = this.trackerRepository.create({
         ...eventData,

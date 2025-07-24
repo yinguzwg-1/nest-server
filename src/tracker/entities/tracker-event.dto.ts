@@ -63,10 +63,6 @@ export class TrackerEventDto {
   @IsOptional()
   session_id?: string;
 
-  @IsString()
-  @IsOptional()
-  device_fingerprint?: string;
-
   @IsObject()
   @IsOptional()
   @ValidateNested({ each: false })

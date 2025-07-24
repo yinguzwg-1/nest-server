@@ -18,6 +18,7 @@ import { Monitor } from './monitor/entities';
 import { RedisModule } from './redis/module';
 import { SyncModule } from './sync/module';
 import { WebSocketModule } from './common/websocket/websocket.module';
+console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,7 +28,7 @@ import { WebSocketModule } from './common/websocket/websocket.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        
+        console.log('configService', configService.get('DB_HOST'));
         return {
           type: 'mysql',
           host: configService.get('DB_HOST'),

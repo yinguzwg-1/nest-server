@@ -22,6 +22,6 @@ export class Monitor {
     timestamp: Date;
     @Column()
     query: string;
- 
-
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    module: string;
 }

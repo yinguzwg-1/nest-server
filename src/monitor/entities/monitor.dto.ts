@@ -28,4 +28,7 @@ export class MonitorDto {
     @IsString()
     @IsOptional()
     query?: string;
+    @IsString()
+    @IsOptional()
+    module?: string;
 }

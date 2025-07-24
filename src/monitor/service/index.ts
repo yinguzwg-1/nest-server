@@ -79,4 +79,76 @@ export class MonitorService {
       }
     });
   }
+
+  async getMonitoringDataWithPagination(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    
+    const [data, total] = await this.monitorRepository.findAndCount({
+      order: {
+        timestamp: 'DESC'
+      },
+      skip,
+      take: limit
+    });
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    };
+  }
+
+  async getMonitoringStats() {
+    const total = await this.monitorRepository.count();
+    
+    // 计算成功率
+    const successfulRequests = await this.monitorRepository
+      .createQueryBuilder('monitor')
+      .where('monitor.status_code < :statusCode', { statusCode: 400 })
+      .getCount();
+    const successRate = total > 0 ? (successfulRequests / total) * 100 : 0;
+    
+    // 计算平均响应时间
+    const avgResult = await this.monitorRepository
+      .createQueryBuilder('monitor')
+      .select('AVG(monitor.duration)', 'averageDuration')
+      .getRawOne();
+    const averageResponseTime = avgResult?.averageDuration ? Math.round(avgResult.averageDuration) : 0;
+    
+    // 状态码分布
+    const statusCodeStats = await this.monitorRepository
+      .createQueryBuilder('monitor')
+      .select('monitor.status_code', 'statusCode')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('monitor.status_code')
+      .getRawMany();
+    
+    const statusCodeDistribution: Record<number, number> = {};
+    statusCodeStats.forEach(stat => {
+      statusCodeDistribution[stat.statusCode] = parseInt(stat.count);
+    });
+
+    return {
+      total,
+      successRate: Math.round(successRate * 100) / 100,
+      errorRate: Math.round((100 - successRate) * 100) / 100,
+      averageResponseTime,
+      statusCodeDistribution
+    };
+  }
+
+
+  // 获取指定模块的最新性能数据
+  async getLatestPerformanceByModuleName(moduleName: string) {
+    return await this.monitorRepository.findOne({
+      where: { module: moduleName },
+      order: { timestamp: 'DESC' }
+    });
+  }
 }
