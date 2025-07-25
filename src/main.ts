@@ -3,12 +3,34 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
+  // HTTPS配置 - 可选，如果证书文件不存在则使用HTTP
+  let httpsOptions = undefined;
+  try {
+    const keyPath = path.join(__dirname, '../ssl/private.key');
+    const certPath = path.join(__dirname, '../ssl/certificate.crt');
+    
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      httpsOptions = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+      };
+      logger.log('HTTPS证书加载成功');
+    } else {
+      logger.warn('HTTPS证书文件不存在，将使用HTTP模式');
+    }
+  } catch (error) {
+    logger.warn('HTTPS证书加载失败，将使用HTTP模式:', error.message);
+  }
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    ...(httpsOptions && { httpsOptions }), // 只有在有证书时才启用HTTPS
     cors: {
       origin: ['http://223.4.248.176:8080', 'https://223.4.248.176:8080', 'http://localhost:8080', 'http://localhost:3000', 'https://zwg.autos', 'http://zwg.autos'], // 允许特定来源
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -39,7 +61,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`应用程序已启动，监听端口: ${port}`);
-  logger.log(`API 文档地址: http://localhost:${port}/api`);
+  const protocol = httpsOptions ? 'HTTPS' : 'HTTP';
+  logger.log(`应用程序已启动，使用${protocol}协议，监听端口: ${port}`);
+  logger.log(`API 文档地址: ${protocol.toLowerCase()}://localhost:${port}/api`);
 }
 bootstrap();

@@ -2,6 +2,7 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 @WebSocketGateway({
   cors: {
+    path: '/socket.io',
     origin: [, 'https://223.4.248.176:8080', 'http://localhost:8080', 'http://localhost:3000', 'https://zwg.autos', 'http://zwg.autos'], // 允许 Next.js 前端连接
     credentials: true,
   },
