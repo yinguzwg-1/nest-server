@@ -39,6 +39,9 @@ async function bootstrap() {
     },
   });
 
+  // 设置全局前缀
+  app.setGlobalPrefix('api');
+
   // 启用全局验证管道
   app.useGlobalPipes(
     new ValidationPipe({
@@ -53,6 +56,8 @@ async function bootstrap() {
     .setTitle('Media API')
     .setDescription('The Media API description')
     .setVersion('1.0')
+    .addServer('http://localhost:3000/api', 'Local Development')
+    .addServer('https://zwg.autos/api', 'Production')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
