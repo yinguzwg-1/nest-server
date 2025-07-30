@@ -37,7 +37,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22'
-        cache: 'npm'  # 启用npm缓存
+        # 移除npm缓存配置，因为项目使用pnpm
 
     - name: 📦 Setup pnpm
       uses: pnpm/action-setup@v2
@@ -45,7 +45,10 @@ jobs:
         version: latest
 
     - name: 📦 Install dependencies
-      run: pnpm install --frozen-lockfile --prefer-offline  # 优先使用离线缓存
+      run: |
+        echo "📦 安装项目依赖..."
+        pnpm install --frozen-lockfile --prefer-offline --network-timeout=300000
+        echo "✅ 依赖安装完成"
 
     - name: 🔍 Run linting (optional)
       run: pnpm run lint || echo "⚠️ Linting failed, but continuing with build..."
@@ -214,13 +217,13 @@ jobs:
             while [ $retry_count -lt $max_retries ]; do
               echo "📦 安装项目依赖 (尝试 $((retry_count + 1))/$max_retries)..."
               
-              if timeout 300 pnpm install --frozen-lockfile --prefer-offline; then  # 5分钟超时
+              if timeout 600 pnpm install --frozen-lockfile --prefer-offline --network-timeout=300000; then  # 10分钟超时
                 echo "✅ 项目依赖安装完成"
                 return 0
               else
                 echo "⚠️ 项目依赖安装失败，重试中..."
                 retry_count=$((retry_count + 1))
-                sleep 10
+                sleep 30
               fi
             done
             
