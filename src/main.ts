@@ -56,14 +56,14 @@ async function bootstrap() {
     .setTitle('Media API')
     .setDescription('The Media API description')
     .setVersion('1.0')
-    .addServer('http://localhost:3000/api', 'Local Development')
+    .addServer('http://localhost:3001/api', 'Local Development')
     .addServer('https://zwg.autos/api', 'Production')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
   // 启动服务器
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3001;
   await app.listen(port);
 
   const protocol = httpsOptions ? 'HTTPS' : 'HTTP';
