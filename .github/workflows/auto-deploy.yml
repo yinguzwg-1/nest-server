@@ -47,7 +47,7 @@ jobs:
     - name: 📦 Install dependencies
       run: |
         echo "📦 安装项目依赖..."
-        pnpm install --frozen-lockfile --prefer-offline --network-timeout=300000
+        pnpm install --frozen-lockfile --prefer-offline
         echo "✅ 依赖安装完成"
 
     - name: 🔍 Run linting (optional)
@@ -217,7 +217,7 @@ jobs:
             while [ $retry_count -lt $max_retries ]; do
               echo "📦 安装项目依赖 (尝试 $((retry_count + 1))/$max_retries)..."
               
-              if timeout 600 pnpm install --frozen-lockfile --prefer-offline --network-timeout=300000; then  # 10分钟超时
+              if timeout 600 pnpm install --frozen-lockfile --prefer-offline; then  # 10分钟超时
                 echo "✅ 项目依赖安装完成"
                 return 0
               else

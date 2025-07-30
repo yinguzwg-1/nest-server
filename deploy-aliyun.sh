@@ -116,7 +116,7 @@ install_project_deps() {
     while [ $retry_count -lt $max_retries ]; do
         echo "📦 安装项目依赖 (尝试 $((retry_count + 1))/$max_retries)..."
         
-        if timeout 900 pnpm install --frozen-lockfile --prefer-offline --network-timeout=300000; then
+        if timeout 900 pnpm install --frozen-lockfile --prefer-offline; then
             echo "✅ 项目依赖安装完成"
             return 0
         else
