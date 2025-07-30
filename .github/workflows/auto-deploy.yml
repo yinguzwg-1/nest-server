@@ -243,6 +243,19 @@ jobs:
             exit 1
           fi
           
+          # 验证构建输出
+          echo "✅ 验证构建输出..."
+          if [ ! -f "dist/main.js" ]; then
+            echo "❌ 构建文件不存在: dist/main.js"
+            echo "📁 当前目录: $(pwd)"
+            echo "📁 dist目录内容:"
+            ls -la dist/ || echo "dist目录不存在"
+            exit 1
+          fi
+          
+          echo "✅ 构建文件存在: dist/main.js"
+          ls -la dist/main.js
+          
           # 创建 PM2 配置文件
           echo "📝 创建 PM2 配置文件..."
           cat > ecosystem.config.js << 'EOF'
