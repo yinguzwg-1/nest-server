@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'nestjs-api',
+      name: 'nest-server',  // 统一进程名称
       script: 'npm',
       args: 'run start:prod',
       cwd: './',  // 使用相对路径
