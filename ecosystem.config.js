@@ -4,7 +4,7 @@ module.exports = {
       name: 'nestjs-api',
       script: 'npm',
       args: 'run start:prod',
-      cwd: '/nest-server',
+      cwd: './',  // 使用相对路径
       instances: 1,
       autorestart: true,
       watch: false,
