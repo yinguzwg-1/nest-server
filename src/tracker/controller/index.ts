@@ -16,7 +16,6 @@ import { TrackerEventDto, ITrackerEventResponse } from '../entities';
 
 @Controller('events')
 export class TrackerController {
-  private readonly logger = new Logger(TrackerController.name);
   constructor(private readonly trackerService: TrackerService) {}
 
   @Post('single')
@@ -111,6 +110,8 @@ export class TrackerController {
   @Get('frontend-performance')
   @HttpCode(HttpStatus.OK)
   async getFrontendPerformance(): Promise<ITrackerEventResponse> {
-    return this.trackerService.getFrontendPerformance();
+    const result = await this.trackerService.getFrontendPerformance();
+    console.log('getFrontendPerformance-----------', result);
+    return result;
   }
 }
