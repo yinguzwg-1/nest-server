@@ -1,13 +1,23 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bull";
 import { Queue, Job } from "bull";
+import { RedisClientType } from "redis";
+import path from "path";
+import fs from "fs";
 @Injectable()
 export class RedisService {
 
-  constructor(@InjectQueue('redis') private readonly redisQueue: Queue) { 
+  constructor(
+    @InjectQueue('redis') private readonly redisQueue: Queue,
+    @Inject('REDIS_CLIENT') private readonly redisClient: RedisClientType,
+    @InjectQueue('file-merge-queue') private readonly fileMergeQueue: Queue,
+  ) { 
   
   }
+ 
+
   async addLogToStream(queueName: string, data: any) {
+    
     await this.redisQueue.add(queueName, data, {
       attempts: 3, // 重试次数
       backoff: 3000, // 重试间隔
@@ -225,6 +235,250 @@ export class RedisService {
     } catch (error) {
       console.error('Error getting detailed queue info:', error);
       return { error: error.message };
+    }
+  }
+
+  // ========== 针对key获取数据的方法 ==========
+
+  // 根据key获取数据（自动识别数据类型）
+  async getDataByKey(key: string) {
+    try {
+      const type = await this.redisQueue.client.type(key);
+      let data: any;
+
+      switch (type) {
+        case 'string':
+          data = await this.redisQueue.client.get(key);
+          break;
+        case 'list':
+          data = await this.redisQueue.client.lrange(key, 0, -1);
+          break;
+        case 'set':
+          data = await this.redisQueue.client.smembers(key);
+          break;
+        case 'zset':
+          data = await this.redisQueue.client.zrange(key, 0, -1, 'WITHSCORES');
+          break;
+        case 'hash':
+          data = await this.redisQueue.client.hgetall(key);
+          break;
+        default:
+          data = null;
+      }
+
+      return {
+        key,
+        type,
+        data,
+        exists: true
+      };
+    } catch (error) {
+      return {
+        key,
+        type: null,
+        data: null,
+        exists: false,
+        error: error.message
+      };
+    }
+  }
+
+  // 获取字符串类型的数据
+  async getStringData(key: string): Promise<string | null> {
+    try {
+      return await this.redisQueue.client.get(key);
+    } catch (error) {
+      console.error(`Error getting string data for key ${key}:`, error);
+      return null;
+    }
+  }
+
+  // 获取列表类型的数据
+  async getListData(key: string, start: number = 0, end: number = -1): Promise<string[]> {
+    try {
+      return await this.redisQueue.client.lrange(key, start, end);
+    } catch (error) {
+      console.error(`Error getting list data for key ${key}:`, error);
+      return [];
+    }
+  }
+
+  // 获取集合类型的数据
+  async getSetData(key: string): Promise<string[]> {
+    try {
+      return await this.redisQueue.client.smembers(key);
+    } catch (error) {
+      console.error(`Error getting set data for key ${key}:`, error);
+      return [];
+    }
+  }
+
+  // 获取有序集合类型的数据
+  async getZSetData(key: string, start: number = 0, end: number = -1, withScores: boolean = false): Promise<any[]> {
+    try {
+      if (withScores) {
+        return await this.redisQueue.client.zrange(key, start, end, 'WITHSCORES');
+      } else {
+        return await this.redisQueue.client.zrange(key, start, end);
+      }
+    } catch (error) {
+      console.error(`Error getting zset data for key ${key}:`, error);
+      return [];
+    }
+  }
+
+  // 获取哈希类型的数据
+  async getHashData(key: string, field?: string): Promise<any> {
+    try {
+      if (field) {
+        return await this.redisQueue.client.hget(key, field);
+      } else {
+        return await this.redisQueue.client.hgetall(key);
+      }
+    } catch (error) {
+      console.error(`Error getting hash data for key ${key}:`, error);
+      return field ? null : {};
+    }
+  }
+
+  // 获取哈希的多个字段
+  async getHashFields(key: string, fields: string[]): Promise<any> {
+    try {
+      return await this.redisQueue.client.hmget(key, ...fields);
+    } catch (error) {
+      console.error(`Error getting hash fields for key ${key}:`, error);
+      return fields.map(() => null);
+    }
+  }
+
+  // 检查key是否存在
+  async keyExists(key: string): Promise<boolean> {
+    try {
+      const result = await this.redisQueue.client.exists(key);
+      return result === 1;
+    } catch (error) {
+      console.error(`Error checking key existence for ${key}:`, error);
+      return false;
+    }
+  }
+
+  // 获取key的数据类型
+  async getKeyType(key: string): Promise<string | null> {
+    try {
+      return await this.redisQueue.client.type(key);
+    } catch (error) {
+      console.error(`Error getting key type for ${key}:`, error);
+      return null;
+    }
+  }
+
+  // 获取key的过期时间
+  async getKeyTTL(key: string): Promise<number> {
+    try {
+      return await this.redisQueue.client.ttl(key);
+    } catch (error) {
+      console.error(`Error getting TTL for key ${key}:`, error);
+      return -1;
+    }
+  }
+
+  // 批量获取多个key的数据
+  async getMultipleKeysData(keys: string[]): Promise<Array<{key: string, data: any, type: string | null, exists: boolean}>> {
+    try {
+      const results = await Promise.all(
+        keys.map(async (key) => {
+          return await this.getDataByKey(key);
+        })
+      );
+      return results;
+    } catch (error) {
+      console.error('Error getting multiple keys data:', error);
+      return keys.map(key => ({
+        key,
+        data: null,
+        type: null,
+        exists: false,
+        error: error.message
+      }));
+    }
+  }
+
+  // 根据模式搜索key并获取数据
+  async searchKeysAndGetData(pattern: string, limit: number = 100): Promise<Array<{key: string, data: any, type: string | null}>> {
+    try {
+      const keys = await this.redisQueue.client.keys(pattern);
+      const limitedKeys = keys.slice(0, limit);
+      
+      const results = await Promise.all(
+        limitedKeys.map(async (key) => {
+          const result = await this.getDataByKey(key);
+          return {
+            key: result.key,
+            data: result.data,
+            type: result.type
+          };
+        })
+      );
+      
+      return results;
+    } catch (error) {
+      console.error(`Error searching keys with pattern ${pattern}:`, error);
+      return [];
+    }
+  }
+
+  // 获取Bull队列相关的特定key数据
+  async getBullQueueData(queueName: string = 'redis'): Promise<any> {
+    try {
+      const prefix = `bull:${queueName}`;
+      const keys = await this.redisQueue.client.keys(`${prefix}:*`);
+      
+      const queueData: any = {
+        queueName,
+        totalKeys: keys.length,
+        keys: {},
+        stats: await this.getQueueStats()
+      };
+
+      // 获取关键队列数据
+      const keyTypes = ['wait', 'active', 'completed', 'failed', 'delayed', 'paused'];
+      
+      for (const keyType of keyTypes) {
+        const key = `${prefix}:${keyType}`;
+        if (keys.includes(key)) {
+          queueData.keys[keyType] = await this.getDataByKey(key);
+        }
+      }
+
+      return queueData;
+    } catch (error) {
+      console.error('Error getting Bull queue data:', error);
+      return { error: error.message };
+    }
+  }
+
+  // 获取指定key的大小信息
+  async getKeySize(key: string): Promise<number> {
+    try {
+      const type = await this.redisQueue.client.type(key);
+      
+      switch (type) {
+        case 'string':
+          return await this.redisQueue.client.strlen(key);
+        case 'list':
+          return await this.redisQueue.client.llen(key);
+        case 'set':
+          return await this.redisQueue.client.scard(key);
+        case 'zset':
+          return await this.redisQueue.client.zcard(key);
+        case 'hash':
+          return await this.redisQueue.client.hlen(key);
+        default:
+          return 0;
+      }
+    } catch (error) {
+      console.error(`Error getting key size for ${key}:`, error);
+      return 0;
     }
   }
 

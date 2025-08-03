@@ -18,6 +18,7 @@ import { Monitor } from './monitor/entities';
 import { RedisModule } from './redis/module';
 import { SyncModule } from './sync/module';
 import { WebSocketModule } from './common/websocket/websocket.module';
+import { UploadModule } from './upload/module';
 console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 @Module({
   imports: [
@@ -51,6 +52,7 @@ console.log('process.env.NODE_ENV', process.env.NODE_ENV);
     RedisModule,
     SyncModule,
     WebSocketModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService,

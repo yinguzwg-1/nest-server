@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { RedisService } from '../service';
+import { createClient } from 'redis';
+
 @Module({
   imports: [
     BullModule.forRoot({
@@ -12,8 +14,22 @@ import { RedisService } from '../service';
     BullModule.registerQueue({
       name: 'redis',
     }),
+    BullModule.registerQueue({
+      name: 'file-merge-queue' // 建议使用有意义的队列名
+    })
   ],
-  providers: [RedisService],
-  exports: [BullModule, RedisService],
+  providers: [
+    RedisService,
+    // Redis客户端提供者
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: async () => {
+        const client = createClient({ url: 'redis://localhost:6379' });
+        await client.connect();
+        return client;
+      }
+    }
+  ],
+  exports: [BullModule, RedisService, 'REDIS_CLIENT'],
 })
 export class RedisModule {}
