@@ -39,6 +39,9 @@ export class MusicMetadata {
   @Column({ type: 'varchar', length: 512, nullable: true })
   cover: string;
 
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  mp3: string;
+
   @CreateDateColumn()
   created_at: Date;
 

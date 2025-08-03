@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Param, Get, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Res, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
 import { UploadService } from '../service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { MusicMetadata } from '../entities/music-metadata.entity';
 @Controller('upload')
 export class UploadController {
   constructor(
@@ -15,36 +16,44 @@ export class UploadController {
       fileId: string;
       chunkIndex: string;
       totalChunks: string;
+      belongId: string;
     }
   ) {
-    console.log('file', file);
-    const { fileId, chunkIndex, totalChunks } = body;
+    const { fileId, chunkIndex, totalChunks, belongId } = body;
   
     const result = await this.uploadService.storeChunk(
       fileId,
       parseInt(chunkIndex),
       file.buffer,
       parseInt(totalChunks),
+      belongId
     );
     return result;
   }
 
   @Get('progress/:fileId')
-  async getProgress(@Param('fileId') fileId: string) {
-    return await this.uploadService.getUploadProgress(fileId);
+  async getProgress(@Param('fileId') fileId: string, @Param('belongId') belongId: string) {
+    return await this.uploadService.getUploadProgress(fileId, belongId);
   }
-  @Post('confirm')
-  async confirmUpload(@Body() body: { fileId: string; fileName: string; savePath: string }) {
+
+  @Get('check/:fileId')
+  async checkFileExists(@Param('fileId') fileId: string, @Query('belongId') belongId: string) {
     try {
-      const { fileId, fileName, savePath } = body;
-      const filePath = await this.uploadService.confirmAndSave(
-        fileId,
-        fileName,
-        savePath,
-      );
-      return { success: true, filePath };
+      const progress = await this.uploadService.getUploadProgress(fileId, belongId);
+      const isCompleted = progress.uploaded === progress.total && progress.total > 0;
+      return { 
+        exists: true, 
+        isCompleted,
+        progress: progress.uploaded,
+        totalChunks: progress.total
+      };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { exists: false, isCompleted: false, progress: 0, totalChunks: 0 };
     }
+  }
+
+  @Post('save_music')
+  async saveMusicMetadata(@Body() body: { fileId: string, metadata: MusicMetadata }) {
+    return await this.uploadService.saveMusicMetadata(body.fileId, body.metadata);
   }
 }

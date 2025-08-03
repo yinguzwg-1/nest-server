@@ -54,5 +54,7 @@ export class MusicMetadataDto {
   @IsOptional()
   cover?: string;
 
-
+  @IsString()
+  @IsOptional()
+  mp3?: string;
 } 

@@ -7,8 +7,8 @@ export class FileMergeProcessor {
   constructor(private readonly uploadService: UploadService) { }
 
   @Process('merge-file')
-  async handleMerge(job: Job<{ fileId: string }>) {
-    const { fileId } = job.data;
-    await this.uploadService.mergeChunks(fileId);
+  async handleMerge(job: Job<{ fileId: string, belongId: string }>) {
+    const { fileId, belongId } = job.data;
+    await this.uploadService.mergeChunks(fileId, belongId);
   }
 }

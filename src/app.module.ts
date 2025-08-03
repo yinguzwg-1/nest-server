@@ -19,7 +19,7 @@ import { RedisModule } from './redis/module';
 import { SyncModule } from './sync/module';
 import { WebSocketModule } from './common/websocket/websocket.module';
 import { UploadModule } from './upload/module';
-console.log('process.env.NODE_ENV', process.env.NODE_ENV);
+import { MusicMetadata } from './upload/entities';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,7 +37,7 @@ console.log('process.env.NODE_ENV', process.env.NODE_ENV);
           username: configService.get('DB_USERNAME'),
           password: configService.get('DB_PASSWORD'),
           database: configService.get('DB_DATABASE'),
-          entities: [Media, Translation, TrackerEvent, Monitor],
+          entities: [Media, Translation, TrackerEvent, Monitor, MusicMetadata],
           synchronize: false,
         };
       },

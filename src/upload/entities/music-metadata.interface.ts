@@ -9,7 +9,8 @@ export interface MusicMetadataInterface {
   tags: string[];
   mood: string;
   lyrics: Array<{ time: number; text: string }>;
-  cover_url: string;
+  cover: string;
+  mp3: string;
   created_at: Date;
   updated_at: Date;
 }
