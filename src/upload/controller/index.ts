@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Param, Get, Res, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
 import { UploadService } from '../service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { MusicMetadata } from '../entities/music-metadata.entity';
+import { MusicMetadata } from '../../music/entities/music-metadata.entity';
 @Controller('upload')
 export class UploadController {
   constructor(

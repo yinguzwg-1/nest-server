@@ -19,7 +19,8 @@ import { RedisModule } from './redis/module';
 import { SyncModule } from './sync/module';
 import { WebSocketModule } from './common/websocket/websocket.module';
 import { UploadModule } from './upload/module';
-import { MusicMetadata } from './upload/entities';
+import { MusicMetadata } from './music/entities';
+import { MusicModule } from './music/module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -53,6 +54,7 @@ import { MusicMetadata } from './upload/entities';
     SyncModule,
     WebSocketModule,
     UploadModule,
+    MusicModule,
   ],
   controllers: [AppController],
   providers: [AppService,

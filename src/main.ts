@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -28,7 +29,7 @@ async function bootstrap() {
     logger.warn('HTTPS证书加载失败，将使用HTTP模式:', error.message);
   }
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     ...(httpsOptions && { httpsOptions }), // 只有在有证书时才启用HTTPS
     cors: {
@@ -42,7 +43,15 @@ async function bootstrap() {
   // 设置全局前缀
   app.setGlobalPrefix('api');
 
-  // 启用全局验证管道
+  // 配置静态文件服务
+  app.useStaticAssets(path.join(__dirname, '..', 'public', 'music_files'), {
+    prefix: '/music_files',
+  });
+  app.useStaticAssets(path.join(__dirname, '..', 'public', 'cover_files'), {
+    prefix: '/cover_files',
+  });
+
+  // 启用全局验证管道 
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

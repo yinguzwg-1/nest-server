@@ -13,9 +13,35 @@ import { createClient } from 'redis';
     }),
     BullModule.registerQueue({
       name: 'redis',
+      defaultJobOptions: {
+        // 完成的任务立即删除
+        removeOnComplete: true,
+        // 失败的任务立即删除
+        removeOnFail: true,
+        // 重试次数
+        attempts: 3,
+        // 重试延迟
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+      },
     }),
     BullModule.registerQueue({
-      name: 'file-merge-queue' // 建议使用有意义的队列名
+      name: 'file-merge-queue', // 建议使用有意义的队列名
+      defaultJobOptions: {
+        // 完成的任务立即删除
+        removeOnComplete: true,
+        // 失败的任务立即删除
+        removeOnFail: true,
+        // 重试次数
+        attempts: 3,
+        // 重试延迟
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+      },
     })
   ],
   providers: [

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MusicMetadata, MusicMetadataDto } from '../entities';
+import { MusicMetadata, MusicMetadataDto } from '../../music/entities';
 import { RedisService } from '../../redis/service';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull/dist';
@@ -178,20 +178,34 @@ export class UploadService {
     // 处理音频文件
     if (mergedMp3File) {
       const mp3Buffer = Buffer.from(mergedMp3File as string, 'base64');
-      mp3FullPath = path.join(mp3SavePath, `${fileId}.mp3`);
-      fs.writeFileSync(mp3FullPath, mp3Buffer);
+      const mp3FileName = `${fileId}.mp3`;
+      const mp3ActualPath = path.join(mp3SavePath, mp3FileName);
+      fs.writeFileSync(mp3ActualPath, mp3Buffer);
+      console.log('音频文件已保存到:', mp3ActualPath);
+      // 转换为相对路径格式
+      mp3FullPath = `/music_files/${fileId}/${mp3FileName}`;
+    } else {
+      console.log('音频文件未找到');
+      mp3FullPath = '';
     }
 
     // 处理封面图片
     if (mergedCoverFile) {
       const coverBuffer = Buffer.from(mergedCoverFile as string, 'base64');
-      coverFullPath = path.join(coverSavePath, `${fileId}.jpg`);
-      fs.writeFileSync(coverFullPath, coverBuffer);
+      const coverFileName = `${fileId}.jpg`;
+      const coverActualPath = path.join(coverSavePath, coverFileName);
+      fs.writeFileSync(coverActualPath, coverBuffer);
+      console.log('封面图片已保存到:', coverActualPath);
+      // 转换为相对路径格式
+      coverFullPath = `/cover_files/${fileId}/${coverFileName}`;
+    } else {
+      console.log('封面图片未找到');
+      coverFullPath = '';
     }
 
     // 清理所有相关数据（不再等待自动过期）
     await this.cleanupFileData(fileId);
-
+    
     return {
       mp3FullPath,
       coverFullPath

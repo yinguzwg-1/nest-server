@@ -21,6 +21,12 @@ export class RedisService {
     await this.redisQueue.add(queueName, data, {
       attempts: 3, // 重试次数
       backoff: 3000, // 重试间隔
+      // 设置任务在2小时后过期（7200000毫秒）
+      delay: 0, // 立即执行
+      // 任务完成后立即删除
+      removeOnComplete: true,
+      // 任务失败后立即删除
+      removeOnFail: true,
     })
   }
   async getLogFromStream(batchSize: number) {
@@ -479,6 +485,118 @@ export class RedisService {
     } catch (error) {
       console.error(`Error getting key size for ${key}:`, error);
       return 0;
+    }
+  }
+
+  // 清理长时间等待的任务（超过2小时）
+  async cleanOldWaitingJobs(maxAgeHours: number = 2): Promise<number> {
+    try {
+      const maxAgeMs = maxAgeHours * 60 * 60 * 1000; // 转换为毫秒
+      const cutoffTime = Date.now() - maxAgeMs;
+      
+      // 获取所有等待中的任务
+      const waitingJobs = await this.redisQueue.getJobs(['waiting'], 0, -1);
+      let cleanedCount = 0;
+      
+      for (const job of waitingJobs) {
+        try {
+          const jobData = await job.getState();
+          const jobTimestamp = job.timestamp;
+          
+          // 如果任务创建时间超过指定时间，则删除
+          if (jobTimestamp < cutoffTime) {
+            await job.remove();
+            cleanedCount++;
+            console.log(`Cleaned old waiting job ${job.id} created at ${new Date(jobTimestamp)}`);
+          }
+        } catch (jobError) {
+          console.error(`Error processing job ${job.id}:`, jobError);
+        }
+      }
+      
+      console.log(`Cleaned ${cleanedCount} old waiting jobs older than ${maxAgeHours} hours`);
+      return cleanedCount;
+    } catch (error) {
+      console.error('Error cleaning old waiting jobs:', error);
+      return 0;
+    }
+  }
+
+  // 清理所有长时间等待的任务（包括其他队列）
+  async cleanAllOldWaitingJobs(maxAgeHours: number = 2): Promise<{redis: number, fileMerge: number}> {
+    try {
+      const redisCleaned = await this.cleanOldWaitingJobs(maxAgeHours);
+      
+      // 清理文件合并队列中的旧任务
+      const fileMergeCleaned = await this.cleanOldWaitingJobsFromQueue(
+        this.fileMergeQueue, 
+        maxAgeHours
+      );
+      
+      return {
+        redis: redisCleaned,
+        fileMerge: fileMergeCleaned
+      };
+    } catch (error) {
+      console.error('Error cleaning all old waiting jobs:', error);
+      return { redis: 0, fileMerge: 0 };
+    }
+  }
+
+  // 从指定队列清理长时间等待的任务
+  private async cleanOldWaitingJobsFromQueue(queue: Queue, maxAgeHours: number = 2): Promise<number> {
+    try {
+      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+      const cutoffTime = Date.now() - maxAgeMs;
+      
+      const waitingJobs = await queue.getJobs(['waiting'], 0, -1);
+      let cleanedCount = 0;
+      
+      for (const job of waitingJobs) {
+        try {
+          const jobTimestamp = job.timestamp;
+          
+          if (jobTimestamp < cutoffTime) {
+            await job.remove();
+            cleanedCount++;
+            console.log(`Cleaned old waiting job ${job.id} from queue ${queue.name} created at ${new Date(jobTimestamp)}`);
+          }
+        } catch (jobError) {
+          console.error(`Error processing job ${job.id} from queue ${queue.name}:`, jobError);
+        }
+      }
+      
+      console.log(`Cleaned ${cleanedCount} old waiting jobs from queue ${queue.name} older than ${maxAgeHours} hours`);
+      return cleanedCount;
+    } catch (error) {
+      console.error(`Error cleaning old waiting jobs from queue ${queue.name}:`, error);
+      return 0;
+    }
+  }
+
+  // 获取任务创建时间信息
+  async getJobTimingInfo(): Promise<any> {
+    try {
+      const waitingJobs = await this.redisQueue.getJobs(['waiting'], 0, -1);
+      const now = Date.now();
+      
+      const timingInfo = waitingJobs.map(job => ({
+        id: job.id,
+        timestamp: job.timestamp,
+        createdAt: new Date(job.timestamp),
+        ageInHours: Math.round((now - job.timestamp) / (1000 * 60 * 60) * 100) / 100,
+        isOld: (now - job.timestamp) > (2 * 60 * 60 * 1000) // 超过2小时
+      }));
+      
+      return {
+        totalWaiting: timingInfo.length,
+        oldJobs: timingInfo.filter(job => job.isOld),
+        recentJobs: timingInfo.filter(job => !job.isOld),
+        timingInfo
+      };
+    } catch (error) {
+      console.error('Error getting job timing info:', error);
+      return { error: error.message };
     }
   }
 
