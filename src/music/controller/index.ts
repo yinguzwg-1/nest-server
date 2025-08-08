@@ -14,4 +14,13 @@ export class MusicController {
       data: res
     };
   }
+  @Get('search')
+  async searchMusic(@Query('keyword') keyword: string) {
+    const res = await this.musicService.searchMusic(keyword);
+    return {
+      code: 200,
+      message: 'success',
+      data: res
+    };
+  }
 }
