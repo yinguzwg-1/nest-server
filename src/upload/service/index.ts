@@ -162,8 +162,8 @@ export class UploadService {
     }
     
     // 与 main.ts 中 useStaticAssets 的根路径保持一致，统一使用 process.cwd()/public
-    const mp3SavePath = path.join(process.cwd(), '..', '..', 'music_files', fileId);
-    const coverSavePath = path.join(process.cwd(), '..', '..', 'cover_files', fileId);
+    const mp3SavePath = path.join(process.cwd(), '..', 'music_files', fileId);
+    const coverSavePath = path.join(process.cwd(), '..', 'cover_files', fileId);
     
     // 确保目录存在
     if (!fs.existsSync(mp3SavePath)) {

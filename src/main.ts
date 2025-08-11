@@ -44,10 +44,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // 配置静态文件服务（与保存路径一致，使用进程工作目录）
-  app.useStaticAssets(path.join(process.cwd(), '..','..', 'music_files'), {
+  app.useStaticAssets(path.join(process.cwd(), '..', 'music_files'), {
     prefix: '/music_files',
   });
-  app.useStaticAssets(path.join(process.cwd(), '..', '..', 'cover_files'), {
+  app.useStaticAssets(path.join(process.cwd(), '..', 'cover_files'), {
     prefix: '/cover_files',
   });
 
