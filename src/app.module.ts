@@ -21,6 +21,7 @@ import { WebSocketModule } from './common/websocket/websocket.module';
 import { UploadModule } from './upload/module';
 import { MusicMetadata } from './music/entities';
 import { MusicModule } from './music/module';
+import { AudioModule } from './audio/module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -55,6 +56,7 @@ import { MusicModule } from './music/module';
     WebSocketModule,
     UploadModule,
     MusicModule,
+    AudioModule,
   ],
   controllers: [AppController],
   providers: [AppService,
