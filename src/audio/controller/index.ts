@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Param, Res, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Response } from 'express';
@@ -7,10 +7,11 @@ import { Response } from 'express';
 export class AudioController {
   // 音频文件存储目录（与你的脚本中AUDIO_DIR一致）
   private readonly audioDir = '/root/music_files';
+  private logger = new Logger('AudioController');
   @Get(':filename(*)') // 支持子目录，如 "album/song.mp3"
   async getAudioFile(@Param('filename') filename: string, @Res() res: Response) {
     try {
-     
+      this.logger.log('filename---------------', filename);
       // 1. 构建音频文件和meta文件的完整路径
       const audioPath = path.join(this.audioDir, filename);
       const metaPath = `${audioPath}.meta`;
