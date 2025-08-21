@@ -6,7 +6,7 @@ import { Response } from 'express';
 @Controller('music_files')
 export class AudioController {
   // 音频文件存储目录（与你的脚本中AUDIO_DIR一致）
-  private readonly audioDir = '/root/music_files';
+  private readonly audioDir = '../music_files';
   private logger = new Logger('AudioController');
   // AudioController 中补充响应头配置
   @Get(':filename(*)')
