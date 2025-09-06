@@ -238,7 +238,7 @@ jobs:
               -e DB_HOST=223.4.248.176 \
               -e DB_PORT=3306 \
               -e DB_USERNAME=deploy_user \
-              -e DB_PASSWORD=qq123456 \
+              -e DB_PASSWORD=Qq123456! \
               -e DB_DATABASE=nest_db \
               -e YOUDAO_APP_KEY=20220529001233310 \
               -e YOUDAO_APP_SECRET=yuM_bOR5cbjZVttocWs1 \

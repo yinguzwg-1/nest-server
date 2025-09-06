@@ -6,7 +6,7 @@ export const AppDataSource = new DataSource({
   host: 'localhost',
   port: 3306,
   username: 'root',
-  password: 'qq123456',
+  password: 'Qq123456!',
   database: 'nest_db',
   synchronize: false,
   logging: true,
