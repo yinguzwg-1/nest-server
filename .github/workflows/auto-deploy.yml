@@ -102,8 +102,8 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      # 2. 测试服务器连接
-      - name: 🔍 Test server connectivity
+      # 2. 测试服务器连接（增加调试信息）
+      - name: 🔍 Test server connectivity with debug
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -111,11 +111,21 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           command_timeout: "30s"
+          # 增加调试模式
+          debug: true
           script: |
             echo "🔍 测试服务器连接成功！"
             echo "🖥️ 服务器信息: $(uname -a)"
             echo "🐳 Docker 版本: $(docker --version)"
             echo "✅ Docker 服务状态: $(systemctl is-active docker)"
+            echo "🔑 检查授权密钥文件权限"
+            ls -la ~/.ssh
+            if [ -f ~/.ssh/authorized_keys ]; then
+              echo "🔑 授权密钥文件内容:"
+              cat ~/.ssh/authorized_keys | wc -l
+            else
+              echo "⚠️ 授权密钥文件不存在"
+            fi
 
       # 3. 核心部署步骤：拉取镜像 + 启动容器
       - name: 🚀 Deploy to server (Docker)
@@ -136,97 +146,3 @@ jobs:
 
             echo "🚀 开始部署 ${{ env.APP_NAME }} 应用..."
             echo "🌍 部署环境: ${{ github.event.inputs.environment || 'production' }}"
-            echo "📦 分支: ${{ github.ref_name }} | 提交: ${{ github.sha }}"
-            echo "🐳 镜像: $SHORT_SHA_TAG（或 $LATEST_TAG）"
-            echo "📦 容器: $CONTAINER_NAME | 端口: $PORT"
-
-            # 步骤1：登录 GHCR
-            echo "🔐 服务器登录 GHCR..."
-            echo "${{ secrets.GHCR_PAT }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin || {
-              echo "❌ GHCR 登录失败！请检查 PAT 令牌权限";
-              exit 1;
-            }
-
-            # 步骤2：拉取最新镜像
-            echo "📥 拉取镜像: $SHORT_SHA_TAG..."
-            docker pull $SHORT_SHA_TAG || {
-              echo "⚠️ 短 SHA 标签镜像拉取失败，尝试拉取 latest 标签...";
-              docker pull $LATEST_TAG;
-              SHORT_SHA_TAG=$LATEST_TAG;
-            }
-
-            # 步骤3：停止并删除旧容器
-            echo "🛑 清理旧容器..."
-            if docker ps -q -f name=$CONTAINER_NAME; then
-              docker stop $CONTAINER_NAME && echo "✅ 旧容器已停止";
-            else
-              echo "ℹ️ 没有运行中的旧容器";
-            fi
-            if docker ps -aq -f name=$CONTAINER_NAME; then
-              docker rm $CONTAINER_NAME && echo "✅ 旧容器已删除";
-            else
-              echo "ℹ️ 没有旧容器需要删除";
-            fi
-
-            # 步骤4：清理悬空镜像
-            echo "🧹 清理悬空镜像..."
-            docker image prune -f && echo "✅ 悬空镜像清理完成"
-
-            # 步骤5：启动新容器
-            echo "🚀 启动新容器: $CONTAINER_NAME..."
-            docker run -d \
-              --name $CONTAINER_NAME \
-              --restart unless-stopped \
-              -p $PORT:3001 \
-              -e NODE_ENV=production \
-              -e PORT=3001 \
-              -e DB_HOST=223.4.248.176 \
-              -e DB_PORT=3306 \
-              -e DB_USERNAME=deploy_user \
-              -e DB_PASSWORD=qq123456 \
-              -e DB_DATABASE=nest_db \
-              -e YOUDAO_APP_KEY=20220529001233310 \
-              -e YOUDAO_APP_SECRET=yuM_bOR5cbjZVttocWs1 \
-              $SHORT_SHA_TAG || {
-                echo "❌ 容器启动失败！";
-                exit 1;
-              }
-
-            # 步骤6：验证容器状态
-            echo "🔍 验证容器状态..."
-            sleep 5
-            if docker ps | grep -q $CONTAINER_NAME; then
-              echo "✅ 容器启动成功！";
-              docker ps | grep $CONTAINER_NAME;
-            else
-              echo "❌ 容器启动失败，查看日志:";
-              docker logs $CONTAINER_NAME --tail 50;
-              exit 1;
-            fi
-
-            # 步骤7：健康检查
-            echo "🔍 应用健康检查（共 10 次重试）..."
-            HEALTH_CHECK_PASSED=false
-            for i in {1..10}; do
-              if curl -f -m 10 http://localhost:$PORT/health > /dev/null 2>&1; then
-                HEALTH_CHECK_PASSED=true;
-                break;
-              else
-                echo "ℹ️ 第 $i 次健康检查失败，等待 5 秒重试...";
-                sleep 5;
-              fi
-            done
-
-            # 最终结果提示
-            if [ "$HEALTH_CHECK_PASSED" = true ]; then
-              echo "🎉 部署成功！";
-              echo "🌐 应用访问地址: http://${{ secrets.HOST }}:$PORT";
-              echo "🌐 API 健康检查: http://${{ secrets.HOST }}:$PORT/health";
-              echo "📦 部署版本: ${{ github.sha }}";
-              echo "🐳 容器状态: 正常运行";
-            else
-              echo "❌ 健康检查失败！应用无法访问";
-              echo "📋 应用日志:";
-              docker logs $CONTAINER_NAME --tail 100;
-              exit 1;
-            fi 
