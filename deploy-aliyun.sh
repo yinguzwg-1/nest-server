@@ -164,7 +164,7 @@ module.exports = {
       PORT: 3001,
       DB_HOST: '223.4.248.176',
       DB_PORT: 3306,
-      DB_USERNAME: 'deploy_user',
+      DB_USERNAME: 'root',
       DB_PASSWORD: 'Qq123456!',
       DB_DATABASE: 'nest_db',
       YOUDAO_APP_KEY: '20220529001233310',
