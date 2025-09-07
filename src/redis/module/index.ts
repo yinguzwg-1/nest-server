@@ -7,7 +7,7 @@ import { createClient } from 'redis';
   imports: [
     BullModule.forRoot({
       redis: {
-        host: 'localhost',
+        host: '172.22.166.117',
         port: 6379,
       },
     }),
@@ -50,7 +50,7 @@ import { createClient } from 'redis';
     {
       provide: 'REDIS_CLIENT',
       useFactory: async () => {
-        const client = createClient({ url: 'redis://localhost:6379' });
+        const client = createClient({ url: 'redis://172.22.166.117:6379' });
         await client.connect();
         return client;
       }
