@@ -9,16 +9,6 @@ import { MediaModule } from './media/module';
 import { TranslationModule } from './translation/module';
 import { CacheModule } from './cache/cache.module';
 import { CrawlerModule } from './crawler/module';
-import { TrackerModule } from './tracker/module';
-import { TrackerEvent } from './tracker/entities';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingInterceptor } from './common/logging/logging.interceptor';
-import { MonitorModule } from './monitor/module';
-import { Monitor } from './monitor/entities';
-import { RedisModule } from './redis/module';
-import { SyncModule } from './sync/module';
-import { WebSocketModule } from './common/websocket/websocket.module';
-import { UploadModule } from './upload/module';
 import { MusicMetadata } from './music/entities';
 import { MusicModule } from './music/module';
 import { AudioModule } from './audio/module';
@@ -39,7 +29,7 @@ import { AudioModule } from './audio/module';
           username: configService.get('DB_USERNAME'),
           password: configService.get('DB_PASSWORD'),
           database: configService.get('DB_DATABASE'),
-          entities: [Media, Translation, TrackerEvent, Monitor, MusicMetadata],
+          entities: [Media, Translation, MusicMetadata],
           synchronize: false,
         };
       },
@@ -49,21 +39,12 @@ import { AudioModule } from './audio/module';
     TranslationModule,
     CacheModule,
     CrawlerModule,
-    TrackerModule,
-    MonitorModule,
-    RedisModule,
-    SyncModule,
-    WebSocketModule,
-    UploadModule,
     MusicModule,
     AudioModule,
   ],
   controllers: [AppController],
   providers: [AppService,
-  {
-    provide: APP_INTERCEPTOR,
-    useClass: LoggingInterceptor,
-  }
+
 ],
 })
 export class AppModule {}

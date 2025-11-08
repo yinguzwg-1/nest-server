@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RedisService } from './redis/service';
+// import { RedisService } from './redis/service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly redisService: RedisService
+    // private readonly redisService: RedisService
   ) {}
 
   @Get()
@@ -22,8 +22,8 @@ export class AppController {
     };
   }
 
-  @Get('redis-status')
-  async getRedisStatus() {
-    return await this.redisService.getDetailedQueueInfo();
-  }
+  // @Get('redis-status')
+  // async getRedisStatus() {
+  //   return await this.redisService.getDetailedQueueInfo();
+  // }
 }
