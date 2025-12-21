@@ -28,7 +28,8 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "exif-parser": "^0.1.12"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -39,7 +40,6 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^20.3.1",
     "cross-env": "^10.1.0",
-    "exif-parser": "^0.1.12",
     "typescript": "^5.1.3"
   }
 }
