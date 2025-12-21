@@ -1,52 +1,36 @@
-# 使用官方 Node.js 18 镜像作为基础镜像
-FROM node:18
-
-# 设置工作目录
+# 阶段 1: 安装依赖
+FROM node:18-slim AS deps
 WORKDIR /app
-
-# 设置环境变量
-ENV NODE_ENV=production
-ENV PORT=3001
-ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# 安装 pnpm
-RUN npm install -g pnpm
-
-# 设置 pnpm 配置，使用淘宝镜像源避免网络问题
-RUN pnpm config set registry https://registry.npmmirror.com && \
-    pnpm config set fetch-retries 5 && \
-    pnpm config set fetch-retry-mintimeout 10000 && \
-    pnpm config set fetch-retry-maxtimeout 120000
-
-# 复制 package.json 和 pnpm-lock.yaml
+RUN apt-get update && apt-get install -y python3 make g++ curl && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm && pnpm config set registry https://registry.npmmirror.com
 COPY package.json pnpm-lock.yaml ./
-
-# 安装所有依赖（包括开发依赖）
 RUN pnpm install --frozen-lockfile
 
-# 复制源代码
+# 阶段 2: 构建项目
+FROM node:18-slim AS builder
+WORKDIR /app
+RUN npm install -g pnpm
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN pnpm run build && pnpm prune --prod
 
-# 构建应用（使用生产专用的 TypeScript 配置）
-RUN npx tsc -p tsconfig.build.json
+# 阶段 3: 运行阶段
+FROM node:18-slim AS runner
+WORKDIR /app
 
-# 删除开发依赖，只保留生产依赖
-RUN pnpm prune --prod
+ENV NODE_ENV=production
+ENV PORT=3001
 
-# 创建非 root 用户
-RUN groupadd -r nodejs && useradd -r -g nodejs nestjs
+# 安装运行所需的最小依赖（如健康检查用的 curl）
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# 更改文件所有权
-RUN chown -R nestjs:nodejs /app
-USER nestjs
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# 暴露端口
 EXPOSE 3001
 
-# 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-# 启动应用
-CMD ["pnpm", "run", "start:prod"] 
+CMD ["node", "dist/main"]

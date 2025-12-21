@@ -1,4 +1,4 @@
-name: 🚀 Nest.js Auto Build and Deploy with Docker
+name: 🚀 Nest.js Auto Build and Deploy with Docker (Aliyun ACR)
 
 on:
   push:
@@ -15,8 +15,9 @@ on:
         - staging
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}
+  # 阿里云 ACR 配置
+  REGISTRY: crpi-q2c5la9qn25hswu3.cn-hangzhou.personal.cr.aliyuncs.com
+  NAMESPACE: yinguzwg
   APP_NAME: nest-server
   CONTAINER_NAME: nest-server-app
   PORT: 3001
@@ -26,12 +27,10 @@ permissions:
   packages: write
 
 jobs:
-  # 第一阶段：构建并推送 Docker 镜像（稳定不变）
   build-and-push:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     outputs:
-      latest_tag: ${{ steps.meta.outputs.tags }}
       short_sha_tag: ${{ steps.extract_tag.outputs.short_sha_tag }}
     
     steps:
@@ -40,42 +39,32 @@ jobs:
 
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          install: true
 
-      - name: 🔐 Log in to GitHub Container Registry
+      - name: 🔐 Log in to Aliyun ACR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
+          username: ${{ secrets.ALIRUN_USER }}
+          password: ${{ secrets.ALIRUN_PWD }}
 
-      - name: 🏷️ Extract image metadata (tags/labels)
+      - name: 🏷️ Extract image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ env.APP_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.APP_NAME }}
           tags: |
             type=sha,prefix=${{ github.ref_name }}-,format=short
             type=raw,value=latest,enable={{is_default_branch}}
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
-            org.opencontainers.image.branch=${{ github.ref_name }}
 
-      - name: 📌 Extract short SHA tag (带调试)
+      - name: 📌 Extract short SHA tag
         id: extract_tag
         run: |
-          echo "🔍 调试：metadata 输出的所有标签：${{ steps.meta.outputs.tags }}"
-          SHORT_SHA_TAG=$(echo "${{ steps.meta.outputs.tags }}" | awk -F ',' '{for(i=1;i<=NF;i++) if($i ~ /${{ github.ref_name }}-/) print $i}')
-          
-          if [ -z "$SHORT_SHA_TAG" ]; then
-            echo "❌ 错误：未从 metadata 中提取到短SHA标签"
-            echo "当前分支名：${{ github.ref_name }}"
-            echo "metadata 输出：${{ steps.meta.outputs.tags }}"
-            exit 1
-          fi
-          
+          SHORT_SHA_TAG=$(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | grep "${{ github.ref_name }}-" | head -1)
           echo "short_sha_tag=$SHORT_SHA_TAG" >> $GITHUB_OUTPUT
-          echo "✅ 成功提取短SHA标签：$SHORT_SHA_TAG"
+          echo "✅ 提取短 SHA 标签：$SHORT_SHA_TAG"
 
       - name: 🏗️ Build and push Docker image
         uses: docker/build-push-action@v5
@@ -91,13 +80,6 @@ jobs:
             NODE_ENV=production
           platforms: linux/amd64
 
-      - name: 📋 确认镜像推送结果
-        run: |
-          echo "✅ 镜像推送完成，推送的标签："
-          echo "${{ steps.meta.outputs.tags }}"
-          echo "短SHA标签（传递给部署阶段）：${{ steps.extract_tag.outputs.short_sha_tag }}"
-
-  # 第二阶段：部署到服务器（核心修复容器清理逻辑）
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
@@ -107,128 +89,41 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      # 测试服务器连接（基础验证）
-      - name: 🔍 Test server connectivity
+      - name: 🚀 Deploy to Aliyun Server (Docker)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
-          command_timeout: "600s"
+          command_timeout: "900s"
           script: |
-            echo "🔍 服务器连接测试成功！"
-            echo "🖥️ 服务器系统：$(uname -a)"
-            echo "🐳 Docker 版本：$(docker --version)"
-            echo "✅ Docker 状态：$(systemctl is-active docker)"
-
-      # 核心部署步骤（已修复容器清理报错）
-      - name: 🚀 Deploy to server (Docker 带调试)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.PORT || 22 }}
-          command_timeout: "600s"
-          script: |
-            # 错误追踪：遇到错误立即停止+打印执行命令
             set -euo pipefail
-            set -x
-
-            # 1. 定义核心变量（显式传递，避免依赖环境）
-            IMAGE_FULL_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ env.APP_NAME }}"
+            
+            # 变量定义
+            IMAGE_REPO="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.APP_NAME }}"
             SHORT_SHA_TAG="${{ needs.build-and-push.outputs.short_sha_tag }}"
-            LATEST_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ env.APP_NAME }}:latest"
+            LATEST_TAG="$IMAGE_REPO:latest"
             CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
             PORT="${{ env.PORT }}"
-            DEPLOY_ENV="${{ github.event.inputs.environment || 'production' }}"
-            GITHUB_ACTOR="${{ github.actor }}"
-            GHCR_REGISTRY="${{ env.REGISTRY }}"
 
-            # 2. 调试变量：确认所有参数传递正常
-            echo -e "\n🔍 【部署调试】当前变量值："
-            echo "IMAGE_FULL_NAME: $IMAGE_FULL_NAME"
-            echo "SHORT_SHA_TAG: $SHORT_SHA_TAG"
-            echo "LATEST_TAG: $LATEST_TAG"
-            echo "CONTAINER_NAME: $CONTAINER_NAME"
-            echo "PORT: $PORT"
-            echo "DEPLOY_ENV: $DEPLOY_ENV"
+            echo "🔐 登录阿里云 ACR..."
+            echo "${{ secrets.ALIRUN_PWD }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.ALIRUN_USER }} --password-stdin
 
-            # 3. 前置检查：确保Docker服务正常运行
-            echo -e "\n✅ 【部署前置】检查Docker服务状态："
-            if ! systemctl is-active --quiet docker; then
-              echo "⚠️ Docker服务未运行，尝试启动..."
-              sudo systemctl start docker
-              sleep 3  # 等待服务启动
-              if ! systemctl is-active --quiet docker; then
-                echo "❌ Docker服务启动失败，部署中断"
-                exit 1
-              fi
-            fi
-            echo "✅ Docker服务运行正常"
-
-            # 4. GHCR登录：带权限验证和错误提示
-            echo -e "\n🔐 【步骤1】登录GHCR容器仓库："
-            echo "调试：GHCR_PAT前5位（脱敏）：${{ secrets.GHCR_PAT }}..."
-            if ! echo "${{ secrets.GHCR_PAT }}" | docker login "$GHCR_REGISTRY" -u "$GITHUB_ACTOR" --password-stdin; then
-              echo -e "\n❌ GHCR登录失败！请检查："
-              echo "1. PAT是否包含「read:packages」「write:packages」权限"
-              echo "2. 用户名是否为正确GitHub账号（当前：$GITHUB_ACTOR）"
-              exit 1
-            fi
-            echo "✅ GHCR登录成功"
-
-            # 5. 拉取镜像：双重重试（短SHA → latest）
-            echo -e "\n📥 【步骤2】拉取Docker镜像："
-            echo "目标镜像（短SHA）：$SHORT_SHA_TAG"
-            if docker pull "$SHORT_SHA_TAG"; then
-              echo "✅ 短SHA标签镜像拉取成功"
+            echo "📥 拉取镜像: $SHORT_SHA_TAG..."
+            if ! docker pull "$SHORT_SHA_TAG"; then
+              echo "⚠️ 短 SHA 拉取失败，尝试 latest..."
+              docker pull "$LATEST_TAG"
+              TARGET_IMAGE="$LATEST_TAG"
+            else
               TARGET_IMAGE="$SHORT_SHA_TAG"
-            else
-              echo "⚠️ 短SHA标签镜像拉取失败，重试latest标签：$LATEST_TAG"
-              if docker pull "$LATEST_TAG"; then
-                echo "✅ latest标签镜像拉取成功"
-                TARGET_IMAGE="$LATEST_TAG"
-              else
-                echo -e "\n❌ 镜像拉取失败！请检查镜像地址和服务器网络"
-                exit 1
-              fi
             fi
 
-            # 【核心修复】6. 清理旧容器：先判断存在性，避免报错
-            echo -e "\n🛑 【步骤3】清理旧容器："
-            # 检查容器是否存在（包括已停止的容器）
-            CONTAINER_EXISTS=$(docker ps -aq -f "name=^/${CONTAINER_NAME}$" | wc -l)
-            if [ "$CONTAINER_EXISTS" -eq 1 ]; then
-              echo "ℹ️ 找到旧容器 $CONTAINER_NAME，开始清理..."
-              # 若容器正在运行，先停止
-              if docker ps -q -f "name=^/${CONTAINER_NAME}$"; then
-                docker stop "$CONTAINER_NAME"
-                echo "✅ 旧容器已停止"
-              fi
-              # 删除已停止的容器
-              docker rm "$CONTAINER_NAME"
-              echo "✅ 旧容器已删除"
-            else
-              echo "ℹ️ 未找到旧容器 $CONTAINER_NAME，跳过清理步骤"
-            fi
+            echo "🛑 清理旧容器..."
+            docker ps -q -f name=$CONTAINER_NAME | xargs -r docker stop
+            docker ps -aq -f name=$CONTAINER_NAME | xargs -r docker rm
 
-            # 7. 清理悬空镜像：释放服务器空间
-            echo -e "\n🧹 【步骤4】清理悬空镜像："
-            DANGLING_IMAGES=$(docker images -f "dangling=true" -q)
-            if [ -n "$DANGLING_IMAGES" ]; then
-              docker rmi -f "$DANGLING_IMAGES"
-              echo "✅ 清理悬空镜像完成（数量：$(echo "$DANGLING_IMAGES" | wc -l)）"
-            else
-              echo "ℹ️ 无悬空镜像需要清理"
-            fi
-
-            # 8. 启动新容器：显式参数+环境变量
-            echo -e "\n🚀 【步骤5】启动新容器："
-            echo "容器名：$CONTAINER_NAME"
-            echo "镜像地址：$TARGET_IMAGE"
-            echo "端口映射：$PORT:3001"
+            echo "🚀 启动新容器..."
             docker run -d \
               --name "$CONTAINER_NAME" \
               --restart unless-stopped \
@@ -244,39 +139,17 @@ jobs:
               -e YOUDAO_APP_SECRET=yuM_bOR5cbjZVttocWs1 \
               "$TARGET_IMAGE"
 
-            # 检查容器启动结果
-            if docker ps -q -f "name=^/${CONTAINER_NAME}$"; then
-              echo "✅ 新容器启动成功！"
-              echo "容器ID：$(docker ps -q -f "name=^/${CONTAINER_NAME}$")"
-            else
-              echo -e "\n❌ 容器启动失败！查看日志："
-              docker logs "$CONTAINER_NAME" --tail 50
-              exit 1
-            fi
+            echo "🧹 清理旧镜像..."
+            docker image prune -f
 
-            # 9. 应用健康检查：10次重试，确保服务可用
-            echo -e "\n🔍 【步骤6】应用健康检查（10次重试）："
-            HEALTH_CHECK_PASSED=false
+            echo "🔍 健康检查..."
             for i in {1..10}; do
-              if curl -m 5 -s "http://localhost:$PORT/health" > /dev/null; then
-                HEALTH_CHECK_PASSED=true
-                break
-              else
-                echo "ℹ️ 第 $i 次健康检查失败，等待5秒重试..."
-                sleep 5
+              if curl -s "http://localhost:$PORT/api/health" > /dev/null; then
+                echo "🎉 部署成功！"
+                exit 0
               fi
+              echo "等待应用启动... ($i/10)"
+              sleep 5
             done
-
-            # 最终部署结果提示
-            if [ "$HEALTH_CHECK_PASSED" = true ]; then
-              echo -e "\n🎉 【部署完成】所有步骤执行成功！"
-              echo "🌐 应用访问地址：http://${{ secrets.HOST }}:$PORT"
-              echo "🌐 健康检查地址：http://${{ secrets.HOST }}:$PORT/health"
-              echo "📦 部署版本：${{ github.sha }}"
-              echo "🐳 运行容器：$CONTAINER_NAME"
-            else
-              echo -e "\n❌ 【部署失败】健康检查超时！"
-              echo "📋 容器日志（最后50行）："
-              docker logs "$CONTAINER_NAME" --tail 50
-              exit 1
-            fi
+            echo "❌ 健康检查失败"
+            exit 1

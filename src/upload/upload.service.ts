@@ -155,11 +155,15 @@ export class UploadService {
         this.logger.warn(`无法解析 EXIF (${file.originalname}): ${exifErr.message}`);
       }
 
-      // 2. 转换为 WebP (如果不是 WebP)
-      const ext = path.extname(file.path).toLowerCase();
+      const uploadDir = path.dirname(file.path);
+      const filenameObj = path.parse(file.filename);
+      const ext = filenameObj.ext.toLowerCase();
+      const baseFilename = filenameObj.name;
+
+      // 2. 转换为 WebP
       if (ext !== '.webp') {
-        const webpFilename = `${path.parse(file.filename).name}.webp`;
-        const webpPath = path.join(path.dirname(file.path), webpFilename);
+        const webpFilename = `${baseFilename}.webp`;
+        const webpPath = path.join(uploadDir, webpFilename);
         
         this.logger.log(`正在转换为 WebP: ${file.originalname} -> ${webpFilename}`);
         

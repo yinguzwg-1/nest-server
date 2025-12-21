@@ -10,7 +10,7 @@ async function bootstrap() {
   
   // 全局校验管道
   app.useGlobalPipes(new ValidationPipe());
-  
+
   // 设置全局前缀
   app.setGlobalPrefix('api');
 
