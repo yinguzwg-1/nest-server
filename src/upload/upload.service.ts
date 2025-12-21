@@ -165,10 +165,11 @@ export class UploadService {
         const webpFilename = `${baseFilename}.webp`;
         const webpPath = path.join(uploadDir, webpFilename);
         
-        this.logger.log(`正在转换为 WebP: ${file.originalname} -> ${webpFilename}`);
+        this.logger.log(`正在转换为 WebP 并缩放: ${file.originalname} -> ${webpFilename}`);
         
         await sharp(file.path)
-          .webp({ quality: 85 })
+          .resize(1600, null, { withoutEnlargement: true }) // 限制最大宽度 1600px，不拉伸小图
+          .webp({ quality: 80 }) // 稍微降低一点质量，体积会减小很多
           .toFile(webpPath);
 
         // 删除原始文件
@@ -186,6 +187,14 @@ export class UploadService {
           height = info.height;
         }
       } else if (!width || !height) {
+        // 如果已经是 WebP，也进行一次缩放处理，防止原图过大
+        const tempPath = `${file.path}.tmp.webp`;
+        await sharp(file.path)
+          .resize(1600, null, { withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(tempPath);
+        fs.renameSync(tempPath, file.path);
+
         const info = await sharp(file.path).metadata();
         width = info.width;
         height = info.height;
