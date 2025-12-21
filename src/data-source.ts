@@ -1,5 +1,4 @@
 import { DataSource } from 'typeorm';
-import { Media } from './media/entities';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -10,7 +9,7 @@ export const AppDataSource = new DataSource({
   database: 'nest_db',
   synchronize: false,
   logging: true,
-  entities: [Media],
+  entities: [],
   migrations: ['src/migrations/*.ts'],
   subscribers: [],
 });

@@ -1,17 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Media } from './media/entities';
-import { Translation } from './translation/entities';
-import { MediaModule } from './media/module';
-import { TranslationModule } from './translation/module';
-import { CacheModule } from './cache/cache.module';
-import { CrawlerModule } from './crawler/module';
-import { MusicMetadata } from './music/entities';
-import { MusicModule } from './music/module';
-import { AudioModule } from './audio/module';
+import { AuthModule } from './auth/auth.module';
+import { UploadModule } from './upload/upload.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,31 +16,28 @@ import { AudioModule } from './audio/module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        console.log('configService', configService.get('DB_HOST'));
-        return {
-          type: 'mysql',
-          host: configService.get('DB_HOST'),
-          port: configService.get('DB_PORT'),
-          username: configService.get('DB_USERNAME'),
-          password: configService.get('DB_PASSWORD'),
-          database: configService.get('DB_DATABASE'),
-          entities: [Media, Translation, MusicMetadata],
-          synchronize: false,
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_DATABASE'),
+        autoLoadEntities: true,
+        synchronize: configService.get<string>('NODE_ENV') === 'development',
+        logging: configService.get<string>('NODE_ENV') === 'development',
+      }),
       inject: [ConfigService],
     }),
-    MediaModule,
-    TranslationModule,
-    CacheModule,
-    CrawlerModule,
-    MusicModule,
-    AudioModule,
+    // 静态资源服务，让前端能访问上传的图片
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+      serveRoot: '/',
+    }),
+    AuthModule,
+    UploadModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
-
-],
+  providers: [AppService],
 })
 export class AppModule {}
