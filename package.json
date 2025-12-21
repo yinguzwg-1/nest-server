@@ -29,7 +29,8 @@
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
     "typeorm": "^0.3.17",
-    "exif-parser": "^0.1.12"
+    "exif-parser": "^0.1.12",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
