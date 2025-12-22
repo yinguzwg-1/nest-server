@@ -282,14 +282,9 @@ export class UploadService {
         ...videos.map(v => ({ ...itemToPlain(v), type: 'video' })),
       ];
 
-      // 随机打乱
-      items = items.sort(() => Math.random() - 0.5);
-
-      // 视频优先排列在前方
+      // 严格按照上传时间倒序排列 (最新的在前)
       items = items.sort((a, b) => {
-        if (a.type === 'video' && b.type !== 'video') return -1;
-        if (a.type !== 'video' && b.type === 'video') return 1;
-        return 0;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
 
       // 截取当前页所需的量
