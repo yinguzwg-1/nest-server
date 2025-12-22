@@ -58,13 +58,13 @@ export class UploadService {
       await new Promise((resolve, reject) => {
         ffmpeg(file.path)
           .screenshots({
-            timestamps: ['00:00:01'], // 提取第 1 秒的画面
+            timestamps: ['2'], // 提取第 2 秒的画面，避开可能的黑帧
             filename: coverFilename,
             folder: uploadDir,
             size: '720x?' // 维持宽高比
           })
           .on('end', () => {
-            this.logger.log('视频封面提取完成');
+            this.logger.log(`视频封面提取完成: ${coverFilename}`);
             resolve(true);
           })
           .on('error', (err) => {
@@ -165,11 +165,19 @@ export class UploadService {
         const webpFilename = `${baseFilename}.webp`;
         const webpPath = path.join(uploadDir, webpFilename);
         
-        this.logger.log(`正在转换为 WebP 并缩放: ${file.originalname} -> ${webpFilename}`);
+        this.logger.log(`正在进行极致压缩处理: ${file.originalname} -> ${webpFilename}`);
         
         await sharp(file.path)
-          .resize(1600, null, { withoutEnlargement: true }) // 限制最大宽度 1600px，不拉伸小图
-          .webp({ quality: 80 }) // 稍微降低一点质量，体积会减小很多
+          .rotate() // 自动纠正手机拍摄的旋转角度
+          .resize(1200, null, { 
+            withoutEnlargement: true,
+            fit: 'inside' 
+          })
+          .webp({ 
+            quality: 75, // 降低到 75，肉眼难辨但体积骤降
+            effort: 6,   // 最大压缩力度
+            lossless: false
+          })
           .toFile(webpPath);
 
         // 删除原始文件
@@ -187,11 +195,15 @@ export class UploadService {
           height = info.height;
         }
       } else if (!width || !height) {
-        // 如果已经是 WebP，也进行一次缩放处理，防止原图过大
+        // 如果已经是 WebP，也进行一次缩放和极致压缩处理
         const tempPath = `${file.path}.tmp.webp`;
         await sharp(file.path)
-          .resize(1600, null, { withoutEnlargement: true })
-          .webp({ quality: 80 })
+          .rotate()
+          .resize(1200, null, { withoutEnlargement: true })
+          .webp({ 
+            quality: 75,
+            effort: 6
+          })
           .toFile(tempPath);
         fs.renameSync(tempPath, file.path);
 
