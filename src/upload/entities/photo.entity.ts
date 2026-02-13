@@ -37,6 +37,12 @@ export class Photo {
   @Column({ nullable: true })
   height: number;
 
+  @Column({ nullable: true })
+  liveVideoUrl: string; // Live Photo 配对视频路径
+
+  @Column({ type: 'datetime', nullable: true })
+  takenAt: Date; // 拍摄时间（从 EXIF 提取，无则用上传时间）
+
   @ManyToOne(() => User)
   user: User;
 
