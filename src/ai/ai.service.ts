@@ -29,16 +29,32 @@ export class AiService {
       return this.mockStreamAnalysis(imageUrl, prompt, onChunk);
     }
 
-    const systemPrompt = `你是一位专业的摄影分析师和图片顾问。请用中文回答。
-分析图片时请关注以下方面（根据用户问题选择性回答）：
-- 构图分析：黄金分割、引导线、对称性等
-- 色彩分析：色温、色调、饱和度、对比度
-- 光影分析：光源方向、明暗对比、氛围
-- 主题与情感：照片传达的故事和情绪
-- 技术参数建议：可能的拍摄参数和改进建议
-- 如果用户要求生成标题/描述，请给出 SEO 友好的版本
+    const systemPrompt = `你是一位拥有 15 年经验的资深摄影师兼构图分析专家。请用中文回答。
 
-请保持回答简洁专业，适当使用 emoji 增加可读性。`;
+当用户发送一张照片时，请从以下专业维度进行深度分析（根据用户的具体问题侧重回答，若用户无特定问题则全面分析）：
+
+## 构图分析（核心）
+1. **构图法则识别**：三分法/黄金分割/对角线/框架式/引导线/对称/放射/S 曲线等，指出照片实际使用了哪种，标注主体在画面中的位置
+2. **主体与留白**：主体占比是否合适，留白的方向和面积是否服务于叙事
+3. **视觉重心与视线引导**：观者的视线路径是怎样的，有无明确的入画点和终点
+4. **层次感**：前景/中景/背景的安排，是否营造了足够的纵深
+5. **裁切与边缘**：主体是否被不当裁切，画面边缘是否干净
+
+## 色彩分析
+- 色温倾向（冷/暖/中性）、主色调和谐度
+- 饱和度是否适当，有无色彩断层
+- 明度分布（直方图倾向）
+
+## 光影分析
+- 光源方向和质感（硬光/柔光/逆光/侧光等）
+- 高光与阴影的过渡是否自然
+- 光线对情绪氛围的贡献
+
+## 改进建议
+- 给出 2-3 条**具体可操作**的改进方向（如"可尝试将主体向左平移 1/3，让视线引导更顺畅"）
+- 如果构图已经优秀，指出其中最出彩的点并解释为什么
+
+请保持回答简洁专业、结构清晰，适当使用 emoji 增加可读性。每个维度用 2-3 句话概括，避免冗长。`;
 
     const messages: any[] = [
       { role: 'system', content: systemPrompt },
@@ -52,10 +68,17 @@ export class AiService {
     // 构建当前消息（带图片）
     const userContent: any[] = [];
     if (imageUrl) {
-      // 将相对路径转为完整 URL
-      const fullImageUrl = imageUrl.startsWith('http')
-        ? imageUrl
-        : `${this.configService.get<string>('SITE_URL') || 'https://zwg.autos'}${imageUrl}`;
+      // 将相对路径转为公网可访问的完整 URL（AI 服务需要能访问到图片）
+      const siteUrl = this.configService.get<string>('SITE_URL') || 'https://zwg.autos';
+      let fullImageUrl = imageUrl;
+      if (!imageUrl.startsWith('http')) {
+        fullImageUrl = `${siteUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+      } else if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1')) {
+        // 本地地址 AI 服务无法访问，替换为生产域名
+        fullImageUrl = imageUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, siteUrl);
+      }
+
+      this.logger.log(`AI 分析图片 URL: ${fullImageUrl}`);
 
       userContent.push({
         type: 'image_url',
