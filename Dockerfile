@@ -27,6 +27,8 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+# 复制 .env 配置文件（含 AI API Key 等）
+COPY --from=builder /app/.env ./.env
 
 EXPOSE 3001
 
