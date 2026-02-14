@@ -5,8 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // 允许跨域
-  app.enableCors();
+  // 允许跨域（Wujie 微前端沙箱的 origin 可能不同，必须放行）
+  app.enableCors({
+    origin: true,                   // 允许任意 origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true,
+  });
   
   // 全局校验管道
   app.useGlobalPipes(new ValidationPipe());
