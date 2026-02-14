@@ -138,6 +138,10 @@ jobs:
               -e DB_DATABASE=nest_db \
               -e YOUDAO_APP_KEY=20220529001233310 \
               -e YOUDAO_APP_SECRET=yuM_bOR5cbjZVttocWs1 \
+              -e AI_API_KEY=${{ secrets.AI_API_KEY }} \
+              -e AI_API_BASE=https://api.siliconflow.cn/v1 \
+              -e AI_MODEL=Qwen/Qwen2.5-VL-32B-Instruct \
+              -e SITE_URL=https://zwg.autos \
               "$TARGET_IMAGE"
 
             echo "🧹 清理旧镜像..."

@@ -8,8 +8,8 @@ yarn-error.log*
 dist
 build
 
-# Environment variables（保留 .env 以便部署时使用，敏感信息请通过 docker run -e 覆盖）
-# .env  ← 不再排除，允许 .env 进入镜像
+# Environment variables
+.env
 .env.local
 .env.development
 .env.development.local
